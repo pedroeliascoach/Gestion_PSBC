@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "node -e \"const fs=require('fs'); const cp=require('child_process'); let p='./node_modules/prisma/build/index.js'; if(!fs.existsSync(p)) p='../node_modules/prisma/build/index.js'; cp.spawnSync('node',[p,'generate'],{stdio:'inherit'})\" && tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
