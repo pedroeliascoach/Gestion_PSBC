@@ -59,7 +59,7 @@ export default function Requisitos() {
                   {r.obligatorio ? 'Obligatorio' : 'Opcional'}
                 </span>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(r); setForm({ nombre: r.nombre, descripcion: r.descripcion ?? '', obligatorio: r.obligatorio, orden: r.orden }); }}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem({ ...r, descripcion: r.descripcion ?? '' }); setForm({ nombre: r.nombre, descripcion: r.descripcion ?? '', obligatorio: r.obligatorio, orden: r.orden }); }}>
                     <Edit2 className="h-3.5 w-3.5" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700" onClick={() => eliminar.mutate(r.id)}>
