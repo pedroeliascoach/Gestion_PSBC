@@ -50,6 +50,21 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   res.status(201).json(evento);
 });
 
+router.patch('/:id', async (req: AuthRequest, res: Response) => {
+  const { titulo, descripcion, fecha, comunidadId } = req.body;
+  const data: any = {};
+  if (titulo) data.titulo = titulo;
+  if (descripcion !== undefined) data.descripcion = descripcion;
+  if (fecha) data.fecha = new Date(fecha);
+  if (comunidadId) data.comunidadId = comunidadId;
+
+  const evento = await prisma.evento.update({
+    where: { id: req.params.id },
+    data,
+  });
+  res.json(evento);
+});
+
 router.delete('/:id', async (req, res: Response) => {
   await prisma.evento.delete({ where: { id: req.params.id } });
   res.status(204).send();

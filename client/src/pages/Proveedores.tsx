@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, CheckCircle, XCircle, Upload, FileText, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, Upload, FileText, AlertTriangle, Pencil } from 'lucide-react';
 import { ESTATUS_PAGO } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 export default function Proveedores() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
 
   const { data: proveedores = [], isLoading } = useQuery({
@@ -26,17 +27,37 @@ export default function Proveedores() {
     queryFn: () => api.get('/instructores').then((r) => r.data),
   });
 
-  const crear = useMutation({
+  const upsert = useMutation({
     mutationFn: (values: typeof form) => {
       const payload = { ...values, instructorId: values.instructorId || null };
-      return api.post('/proveedores', payload);
+      return editingId 
+        ? api.patch(`/proveedores/${editingId}`, payload)
+        : api.post('/proveedores', payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['proveedores'] });
-      setOpen(false);
-      setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
+      handleClose();
     },
   });
+
+  const handleEdit = (p: any) => {
+    setEditingId(p.id);
+    setForm({
+      nombre: p.nombre,
+      rfc: p.rfc,
+      contacto: p.contacto || '',
+      telefono: p.telefono || '',
+      email: p.email || '',
+      instructorId: p.instructorId || '',
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
 
@@ -58,9 +79,14 @@ export default function Proveedores() {
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <CardTitle className="text-base">{p.nombre}</CardTitle>
-                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${p.cumplimientoCompleto ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {p.cumplimientoCompleto ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-                  {p.cumplimientoCompleto ? 'Listo' : `${p.requisitosCompletos}/${p.totalRequisitos}`}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(p)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <div className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${p.cumplimientoCompleto ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {p.cumplimientoCompleto ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                    {p.cumplimientoCompleto ? 'Listo' : `${p.requisitosCompletos}/${p.totalRequisitos}`}
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-gray-500">RFC: {p.rfc}</p>
@@ -93,9 +119,9 @@ export default function Proveedores() {
         ))}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuevo Proveedor</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Proveedor' : 'Nuevo Proveedor'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nombre / Razón Social</Label><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></div>
             <div><Label>RFC</Label><Input value={form.rfc} onChange={(e) => setForm({ ...form, rfc: e.target.value })} /></div>
@@ -115,8 +141,8 @@ export default function Proveedores() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>{crear.isPending ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>{upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

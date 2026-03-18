@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, ETAPAS } from '@/lib/utils';
-import { Plus, MapPin, ArrowRight, Users, BookOpen, FolderOpen } from 'lucide-react';
+import { Plus, MapPin, ArrowRight, Users, BookOpen, FolderOpen, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Comunidades() {
@@ -18,6 +18,7 @@ export default function Comunidades() {
   const qc = useQueryClient();
   const isAdmin = user?.rol === 'ADMIN';
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [etapaFilter, setEtapaFilter] = useState('');
   const [form, setForm] = useState({ nombre: '', municipio: '', fechaIngreso: '' });
 
@@ -26,10 +27,32 @@ export default function Comunidades() {
     queryFn: () => api.get('/comunidades', { params: etapaFilter ? { etapa: etapaFilter } : {} }).then((r) => r.data),
   });
 
-  const crear = useMutation({
-    mutationFn: (data: typeof form) => api.post('/comunidades', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['comunidades'] }); setOpen(false); setForm({ nombre: '', municipio: '', fechaIngreso: '' }); },
+  const upsert = useMutation({
+    mutationFn: (data: typeof form) => 
+      editingId 
+        ? api.patch(`/comunidades/${editingId}`, data)
+        : api.post('/comunidades', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comunidades'] });
+      handleClose();
+    },
   });
+
+  const handleEdit = (c: any) => {
+    setEditingId(c.id);
+    setForm({
+      nombre: c.nombre,
+      municipio: c.municipio,
+      fechaIngreso: c.fechaIngreso ? c.fechaIngreso.split('T')[0] : '',
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({ nombre: '', municipio: '', fechaIngreso: '' });
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
 
@@ -76,7 +99,14 @@ export default function Comunidades() {
                     <MapPin className="h-4 w-4 text-gray-400" />
                     <CardTitle className="text-base">{c.nombre}</CardTitle>
                   </div>
-                  {!c.activa && <Badge className="bg-gray-100 text-gray-600 text-xs">Egresada</Badge>}
+                  <div className="flex items-center gap-2">
+                    {isAdmin && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(c)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {!c.activa && <Badge className="bg-gray-100 text-gray-600 text-xs">Egresada</Badge>}
+                  </div>
                 </div>
                 <p className="text-sm text-gray-500">{c.municipio}, {c.estado}</p>
               </CardHeader>
@@ -101,9 +131,9 @@ export default function Comunidades() {
         })}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nueva Comunidad</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Comunidad' : 'Nueva Comunidad'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Nombre</Label>
@@ -119,9 +149,9 @@ export default function Comunidades() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>
-              {crear.isPending ? 'Guardando...' : 'Guardar'}
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>
+              {upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
             </Button>
           </DialogFooter>
         </DialogContent>

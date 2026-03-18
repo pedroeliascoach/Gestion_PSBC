@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDate } from '@/lib/utils';
-import { Plus, Eye, Camera } from 'lucide-react';
+import { Plus, Eye, Camera, Pencil } from 'lucide-react';
 
 export default function Visitas() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ comunidadId: '', fecha: '', descripcion: '', observaciones: '' });
   const [fotos, setFotos] = useState<File[]>([]);
 
@@ -28,15 +29,40 @@ export default function Visitas() {
     queryFn: () => api.get('/comunidades').then((r) => r.data),
   });
 
-  const crear = useMutation({
+  const upsert = useMutation({
     mutationFn: (data: typeof form) => {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => fd.append(k, v));
       fotos.forEach((f) => fd.append('fotos', f));
+      
+      if (editingId) {
+        return api.patch(`/visitas/${editingId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
       return api.post('/visitas', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['visitas'] }); setOpen(false); setFotos([]); setForm({ comunidadId: '', fecha: '', descripcion: '', observaciones: '' }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['visitas'] });
+      handleClose();
+    },
   });
+
+  const handleEdit = (v: any) => {
+    setEditingId(v.id);
+    setForm({
+      comunidadId: v.comunidadId,
+      fecha: v.fecha ? v.fecha.split('T')[0] : '',
+      descripcion: v.descripcion || '',
+      observaciones: v.observaciones || '',
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    setFotos([]);
+    setForm({ comunidadId: '', fecha: '', descripcion: '', observaciones: '' });
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
 
@@ -68,6 +94,11 @@ export default function Visitas() {
                     </p>
                   )}
                 </div>
+                {(user?.rol === 'PROMOTOR' || user?.rol === 'ADMIN') && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(v)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -75,9 +106,9 @@ export default function Visitas() {
         {visitas.length === 0 && <p className="text-center text-gray-500 py-8">Sin visitas registradas</p>}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Registrar Visita</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Visita' : 'Registrar Visita'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Comunidad</Label>
@@ -96,8 +127,8 @@ export default function Visitas() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>{crear.isPending ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>{upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

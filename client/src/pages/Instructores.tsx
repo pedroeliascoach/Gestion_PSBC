@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Mail, BookOpen } from 'lucide-react';
+import { Plus, Mail, BookOpen, Pencil } from 'lucide-react';
 import { ESTATUS_CAPACITACION } from '@/lib/utils';
 
 export default function Instructores() {
   const qc = useQueryClient();
   const [openNew, setOpenNew] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ nombre: '', email: '', password: '' });
 
   const { data: instructores = [], isLoading } = useQuery({
@@ -20,10 +21,28 @@ export default function Instructores() {
     queryFn: () => api.get('/instructores').then((r) => r.data),
   });
 
-  const crear = useMutation({
-    mutationFn: (data: typeof form) => api.post('/usuarios', { ...data, rol: 'INSTRUCTOR' }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['instructores'] }); setOpenNew(false); setForm({ nombre: '', email: '', password: '' }); },
+  const upsert = useMutation({
+    mutationFn: (data: typeof form) => 
+      editingId 
+        ? api.patch(`/usuarios/${editingId}`, { nombre: data.nombre })
+        : api.post('/usuarios', { ...data, rol: 'INSTRUCTOR' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['instructores'] });
+      handleClose();
+    },
   });
+
+  const handleEdit = (i: any) => {
+    setEditingId(i.usuario.id);
+    setForm({ nombre: i.usuario.nombre, email: i.usuario.email, password: '' });
+    setOpenNew(true);
+  };
+
+  const handleClose = () => {
+    setOpenNew(false);
+    setEditingId(null);
+    setForm({ nombre: '', email: '', password: '' });
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
 
@@ -40,7 +59,12 @@ export default function Instructores() {
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <CardTitle className="text-base">{i.usuario.nombre}</CardTitle>
-                {!i.usuario.activo && <Badge className="bg-gray-100 text-gray-600 text-xs">Inactivo</Badge>}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(i)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  {!i.usuario.activo && <Badge className="bg-gray-100 text-gray-600 text-xs">Inactivo</Badge>}
+                </div>
               </div>
               <p className="text-xs text-gray-500 flex items-center gap-1"><Mail className="h-3 w-3" />{i.usuario.email}</p>
             </CardHeader>
@@ -63,17 +87,21 @@ export default function Instructores() {
         ))}
       </div>
 
-      <Dialog open={openNew} onOpenChange={setOpenNew}>
+      <Dialog open={openNew} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuevo Instructor</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Instructor' : 'Nuevo Instructor'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nombre</Label><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></div>
-            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>Contraseña inicial</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            {!editingId && (
+              <>
+                <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div><Label>Contraseña inicial</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+              </>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>{crear.isPending ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>{upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

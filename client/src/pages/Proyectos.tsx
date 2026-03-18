@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDate, formatCurrency, ESTATUS_PROYECTO } from '@/lib/utils';
-import { Plus, FolderOpen } from 'lucide-react';
+import { Plus, FolderOpen, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Proyectos() {
@@ -17,6 +17,7 @@ export default function Proyectos() {
   const qc = useQueryClient();
   const isAdmin = user?.rol === 'ADMIN';
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [estatusFilter, setEstatusFilter] = useState('');
   const [form, setForm] = useState({
     nombre: '', descripcion: '', comunidadId: '', proveedorId: '',
@@ -31,10 +32,41 @@ export default function Proyectos() {
   const { data: comunidades = [] } = useQuery({ queryKey: ['comunidades'], queryFn: () => api.get('/comunidades').then((r) => r.data), enabled: isAdmin });
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => api.get('/proveedores').then((r) => r.data), enabled: isAdmin });
 
-  const crear = useMutation({
-    mutationFn: (data: typeof form) => api.post('/proyectos', { ...data, presupuesto: data.presupuesto ? Number(data.presupuesto) : null }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['proyectos'] }); setOpen(false); },
+  const upsert = useMutation({
+    mutationFn: (data: typeof form) => {
+      const payload = { ...data, presupuesto: data.presupuesto ? Number(data.presupuesto) : null };
+      return editingId 
+        ? api.patch(`/proyectos/${editingId}`, payload)
+        : api.post('/proyectos', payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['proyectos'] });
+      handleClose();
+    },
   });
+
+  const handleEdit = (proy: any) => {
+    setEditingId(proy.id);
+    setForm({
+      nombre: proy.nombre,
+      descripcion: proy.descripcion || '',
+      comunidadId: proy.comunidadId,
+      proveedorId: proy.proveedorId || '',
+      fechaInicio: proy.fechaInicio ? proy.fechaInicio.split('T')[0] : '',
+      fechaFin: proy.fechaFin ? proy.fechaFin.split('T')[0] : '',
+      presupuesto: proy.presupuesto ? String(proy.presupuesto) : '',
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({
+      nombre: '', descripcion: '', comunidadId: '', proveedorId: '',
+      fechaInicio: '', fechaFin: '', presupuesto: '',
+    });
+  };
 
   const cambiarEstatus = useMutation({
     mutationFn: ({ id, estatus }: { id: string; estatus: string }) => api.patch(`/proyectos/${id}/estatus`, { estatus }),
@@ -82,7 +114,14 @@ export default function Proyectos() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${est?.color}`}>{est?.label}</span>
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(proy)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${est?.color}`}>{est?.label}</span>
+                    </div>
                     {isAdmin && proy.estatus !== 'COMPLETADO' && proy.estatus !== 'CANCELADO' && (
                       <select className="text-xs border rounded px-2 py-1" value="" onChange={(e) => { if (e.target.value) cambiarEstatus.mutate({ id: proy.id, estatus: e.target.value }); }}>
                         <option value="">Cambiar estatus</option>
@@ -98,9 +137,9 @@ export default function Proyectos() {
         {items.length === 0 && <p className="text-center text-gray-500 py-8">Sin proyectos registrados</p>}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Nuevo Proyecto</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Proyecto' : 'Nuevo Proyecto'}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             <div><Label>Nombre</Label><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></div>
             <div><Label>Descripción</Label><Textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /></div>
@@ -125,8 +164,8 @@ export default function Proyectos() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>{crear.isPending ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>{upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

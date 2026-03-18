@@ -85,6 +85,32 @@ router.post('/', upload.array('fotos', 10), async (req: AuthRequest, res: Respon
   res.status(201).json(visita);
 });
 
+router.patch('/:id', upload.array('fotos', 10), async (req: AuthRequest, res: Response) => {
+  const { fecha, descripcion, observaciones, comunidadId } = req.body;
+  const data: any = {};
+  if (fecha) data.fecha = new Date(fecha);
+  if (descripcion !== undefined) data.descripcion = descripcion;
+  if (observaciones !== undefined) data.observaciones = observaciones;
+  if (comunidadId) data.comunidadId = comunidadId;
+
+  const files = (req.files as Express.Multer.File[]) ?? [];
+  if (files.length > 0) {
+    data.fotografias = {
+      create: files.map((f) => ({
+        rutaArchivo: `/uploads/${f.filename}`,
+        nombreOriginal: f.originalname,
+      })),
+    };
+  }
+
+  const visita = await prisma.visita.update({
+    where: { id: req.params.id },
+    data,
+    include: { fotografias: true },
+  });
+  res.json(visita);
+});
+
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   await prisma.visita.delete({ where: { id: req.params.id } });
   res.status(204).send();

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, ESTATUS_CAPACITACION } from '@/lib/utils';
-import { Plus, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, BookOpen, AlertCircle, CheckCircle, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Capacitaciones() {
@@ -18,6 +18,7 @@ export default function Capacitaciones() {
   const qc = useQueryClient();
   const isAdmin = user?.rol === 'ADMIN';
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [estatusFilter, setEstatusFilter] = useState('');
   const [form, setForm] = useState({
     titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
@@ -47,17 +48,41 @@ export default function Capacitaciones() {
     enabled: isAdmin,
   });
 
-  const crear = useMutation({
-    mutationFn: (data: typeof form) => api.post('/capacitaciones', { ...data, instructorIds: form.instructorIds }),
+  const upsert = useMutation({
+    mutationFn: (data: typeof form) => {
+      const payload = { ...data, instructorIds: form.instructorIds };
+      return editingId 
+        ? api.patch(`/capacitaciones/${editingId}`, payload)
+        : api.post('/capacitaciones', payload);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['capacitaciones'] });
-      setOpen(false);
-      setForm({
-        titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
-        fechaInicio: '', fechaFin: '', instructorIds: [],
-      });
+      handleClose();
     },
   });
+
+  const handleEdit = (cap: any) => {
+    setEditingId(cap.id);
+    setForm({
+      titulo: cap.titulo,
+      descripcion: cap.descripcion || '',
+      comunidadId: cap.comunidadId,
+      proveedorId: cap.proveedorId || '',
+      fechaInicio: cap.fechaInicio ? cap.fechaInicio.split('T')[0] : '',
+      fechaFin: cap.fechaFin ? cap.fechaFin.split('T')[0] : '',
+      instructorIds: cap.instructores.map((ci: any) => ci.instructorId),
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({
+      titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
+      fechaInicio: '', fechaFin: '', instructorIds: [],
+    });
+  };
 
   const cambiarEstatus = useMutation({
     mutationFn: ({ id, estatus }: { id: string; estatus: string }) => api.patch(`/capacitaciones/${id}/estatus`, { estatus }),
@@ -117,7 +142,14 @@ export default function Capacitaciones() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${est?.color}`}>{est?.label}</span>
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(cap)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${est?.color}`}>{est?.label}</span>
+                    </div>
                     {isAdmin && cap.estatus !== 'COMPLETADA' && cap.estatus !== 'CANCELADA' && (
                       <select
                         className="text-xs border rounded px-2 py-1"
@@ -139,9 +171,9 @@ export default function Capacitaciones() {
         {items.length === 0 && <p className="text-center text-gray-500 py-8">Sin capacitaciones registradas</p>}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Nueva Capacitación</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Editar Capacitación' : 'Nueva Capacitación'}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             <div><Label>Título</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} /></div>
             <div><Label>Descripción</Label><Textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /></div>
@@ -180,8 +212,8 @@ export default function Capacitaciones() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => crear.mutate(form)} disabled={crear.isPending}>{crear.isPending ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={() => upsert.mutate(form)} disabled={upsert.isPending}>{upsert.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
