@@ -1,0 +1,1 @@
+postgresql://postgres:ddc2026diftam@db.bpdnofilfuxusrivjevp.supabase.co:5432/postgres
