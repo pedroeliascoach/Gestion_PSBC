@@ -25,7 +25,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, ''),
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const allowed = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://gestion-psbc-client.vercel.app'
+    ];
+    if (!origin || allowed.includes(origin.replace(/\/$/, '')) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 };
 
