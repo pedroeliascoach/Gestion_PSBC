@@ -10,6 +10,7 @@ import ComunidadDetalle from '@/pages/ComunidadDetalle';
 import Promotores from '@/pages/Promotores';
 import Instructores from '@/pages/Instructores';
 import Capacitaciones from '@/pages/Capacitaciones';
+import CapacitacionDetalle from '@/pages/CapacitacionDetalle';
 import Proyectos from '@/pages/Proyectos';
 import Visitas from '@/pages/Visitas';
 import Eventos from '@/pages/Eventos';
@@ -48,6 +49,7 @@ function AppRoutes() {
                 <Route path="/promotores" element={<PrivateRoute roles={['ADMIN']}><Promotores /></PrivateRoute>} />
                 <Route path="/instructores" element={<PrivateRoute roles={['ADMIN']}><Instructores /></PrivateRoute>} />
                 <Route path="/capacitaciones" element={<Capacitaciones />} />
+                <Route path="/capacitaciones/:id" element={<CapacitacionDetalle />} />
                 <Route path="/proyectos" element={<Proyectos />} />
                 <Route path="/visitas" element={<Visitas />} />
                 <Route path="/eventos" element={<Eventos />} />
