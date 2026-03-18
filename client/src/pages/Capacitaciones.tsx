@@ -49,7 +49,14 @@ export default function Capacitaciones() {
 
   const crear = useMutation({
     mutationFn: (data: typeof form) => api.post('/capacitaciones', { ...data, instructorIds: form.instructorIds }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['capacitaciones'] }); setOpen(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['capacitaciones'] });
+      setOpen(false);
+      setForm({
+        titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
+        fechaInicio: '', fechaFin: '', instructorIds: [],
+      });
+    },
   });
 
   const cambiarEstatus = useMutation({
