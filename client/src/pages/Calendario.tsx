@@ -23,7 +23,8 @@ import {
   BookOpen, 
   Building2, 
   ClipboardList,
-  Plus
+  Plus,
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -65,7 +66,7 @@ export default function Calendario() {
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
   const getEventsForDay = (day: Date) => {
-    const list = [];
+    const list: any[] = [];
     
     capacitaciones?.forEach((c: any) => {
       if (c.fechaInicio && isSameDay(new Date(c.fechaInicio), day)) {
