@@ -31,6 +31,8 @@ const navItems: NavItem[] = [
   { path: '/galeria', label: 'Galería', icon: Image, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
 ];
 
+import logo from '@/assets/logo.png';
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -45,12 +47,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   const Sidebar = () => (
-    <div className="flex h-full flex-col bg-slate-900 text-white">
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-slate-700">
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">DIF</div>
+    <div className="flex h-full flex-col bg-[#4A1022] text-white border-r border-white/10">
+      <div className="flex items-center gap-3 px-4 py-6 border-b border-white/10">
+        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden shadow-inner">
+          <img src={logo} alt="Logo" className="w-full h-full object-contain p-1" />
+        </div>
         <div>
-          <p className="text-sm font-semibold leading-tight">DIF Tamaulipas</p>
-          <p className="text-xs text-slate-400 leading-tight">Desarrollo Comunitario</p>
+          <p className="text-sm font-bold leading-tight tracking-wide uppercase">DIF Tamaulipas</p>
+          <p className="text-[10px] text-[#BC955C] font-semibold leading-tight uppercase tracking-tighter">Desarrollo Comunitario</p>
         </div>
       </div>
 
@@ -64,10 +68,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               to={item.path}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                 active
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-[#BC955C] text-white shadow-lg'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
               )}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -78,11 +82,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         })}
       </nav>
 
-      <div className="border-t border-slate-700 px-4 py-4">
+      <div className="border-t border-white/10 px-4 py-6 bg-black/10">
         <div className="mb-3">
-          <p className="text-sm font-medium truncate">{user?.nombre}</p>
-          <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-          <span className="mt-1 inline-block text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+          <p className="text-sm font-bold truncate">{user?.nombre}</p>
+          <p className="text-[10px] text-white/50 truncate mb-2 uppercase tracking-widest">{user?.email}</p>
+          <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-[#BC955C]/20 text-[#BC955C] border border-[#BC955C]/30 font-bold uppercase">
             {user?.rol}
           </span>
         </div>
