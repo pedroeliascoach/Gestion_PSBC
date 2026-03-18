@@ -20,6 +20,7 @@ import Proveedores from '@/pages/Proveedores';
 import ProveedorDetalle from '@/pages/ProveedorDetalle';
 import Requisitos from '@/pages/Requisitos';
 import Galeria from '@/pages/Galeria';
+import Calendario from '@/pages/Calendario';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
 
@@ -59,6 +60,7 @@ function AppRoutes() {
                 <Route path="/proveedores/:id" element={<PrivateRoute roles={['ADMIN']}><ProveedorDetalle /></PrivateRoute>} />
                 <Route path="/requisitos" element={<PrivateRoute roles={['ADMIN']}><Requisitos /></PrivateRoute>} />
                 <Route path="/galeria" element={<Galeria />} />
+                <Route path="/calendario" element={<Calendario />} />
               </Routes>
             </Layout>
           </PrivateRoute>

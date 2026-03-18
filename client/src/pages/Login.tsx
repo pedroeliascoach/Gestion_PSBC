@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff, KeyRound, AlertCircle } from 'lucide-react';
 
 import logo from '@/assets/logo.png';
 
@@ -13,8 +14,10 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,14 +64,43 @@ export default function Login() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Aviso de cambio de contraseña */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 mt-4">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="space-y-2">
+                  <p className="text-xs text-amber-800 leading-tight">
+                    Por seguridad, se recomienda cambiar su contraseña periódicamente. Si su contraseña es la predeterminada, cámbiela ahora.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    type="button"
+                    className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100"
+                    onClick={() => setShowChangePassword(true)}
+                  >
+                    <KeyRound className="h-3 w-3 mr-1" /> Cambiar contraseña
+                  </Button>
+                </div>
               </div>
               {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>

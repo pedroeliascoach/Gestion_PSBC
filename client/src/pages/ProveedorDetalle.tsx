@@ -133,14 +133,22 @@ export default function ProveedorDetalle() {
                         ))}
                       </select>
                     )}
-                    <input type="file" id={`ent-${e.tipo}`} className="hidden" onChange={(ev) => {
-                      if (ev.target.files?.[0]) actualizarEntregable.mutate({ tipo: e.tipo, entregado: true, file: ev.target.files[0] });
-                    }} />
-                    <label htmlFor={`ent-${e.tipo}`} className="cursor-pointer">
-                      <Button size="sm" variant="outline" className="h-7 text-xs" asChild>
-                        <span><Upload className="h-3 w-3 mr-1" />{e.entregado ? 'Actualizar' : 'Subir'}</span>
-                      </Button>
-                    </label>
+                    <input
+                      type="file"
+                      id={`ent-${e.tipo}`}
+                      className="hidden"
+                      onChange={(ev) => {
+                        if (ev.target.files?.[0]) actualizarEntregable.mutate({ tipo: e.tipo, entregado: true, file: ev.target.files[0] });
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => document.getElementById(`ent-${e.tipo}`)?.click()}
+                    >
+                      <Upload className="h-3 w-3 mr-1" />{e.entregado ? 'Actualizar' : 'Subir'}
+                    </Button>
                   </div>
                 </div>
                 {e.entregado && ep && (

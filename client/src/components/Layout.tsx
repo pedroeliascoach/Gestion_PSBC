@@ -5,8 +5,21 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, MapPin, Users, GraduationCap, FolderOpen,
   DollarSign, Truck, FileText, Image, LogOut, Menu, X,
-  ClipboardList, BookOpen, ChevronRight, Building2
+  ClipboardList, BookOpen, ChevronRight, Building2, Calendar, KeyRound
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useMutation } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 interface NavItem {
   path: string;
@@ -16,7 +29,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
+  { path: '/calendario', label: 'Calendario', icon: Calendar, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
   { path: '/comunidades', label: 'Comunidades', icon: MapPin, roles: ['ADMIN', 'PROMOTOR'] },
   { path: '/promotores', label: 'Promotores', icon: Users, roles: ['ADMIN'] },
   { path: '/instructores', label: 'Instructores', icon: GraduationCap, roles: ['ADMIN'] },
@@ -38,6 +52,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changeError, setChangeError] = useState('');
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: any) => api.post('/usuarios/change-password', data),
+    onSuccess: () => {
+      setChangePasswordOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setChangeError('');
+      alert('Contraseña actualizada con éxito');
+    },
+    onError: (err: any) => {
+      setChangeError(err.response?.data?.error || 'Error al cambiar la contraseña');
+    }
+  });
+
+  const handlePasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
 
   const visibleItems = navItems.filter((item) => item.roles.includes(user?.rol ?? ''));
 
@@ -90,13 +127,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {user?.rol}
           </span>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-red-400 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
-        </button>
+        <div className="flex flex-col gap-2 mt-4">
+          <button
+            onClick={() => setChangePasswordOpen(true)}
+            className="flex items-center gap-2 text-xs text-white/60 hover:text-[#BC955C] transition-colors"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            Cambiar contraseña
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-red-400 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -128,6 +174,50 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
+
+      {/* Modal Cambio de Contraseña */}
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-[#BC955C]" />
+              Actualizar Contraseña
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handlePasswordChange} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current">Contraseña Actual</Label>
+              <Input
+                id="current"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new">Nueva Contraseña</Label>
+              <Input
+                id="new"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            {changeError && (
+              <p className="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-100 italic">
+                {changeError}
+              </p>
+            )}
+            <DialogFooter>
+              <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full">
+                {changePasswordMutation.isPending ? 'Actualizando...' : 'Guardar Nueva Contraseña'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -69,9 +69,25 @@ router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
   res.json(usuario);
 });
 
-router.delete('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  await prisma.usuario.delete({ where: { id: req.params.id } });
-  res.status(204).send();
+router.post('/change-password', async (req: AuthRequest, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Se requieren ambas contraseñas' });
+  }
+
+  const user = await prisma.usuario.findUnique({ where: { id: req.user!.id } });
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await prisma.usuario.update({
+    where: { id: user.id },
+    data: { password: hash },
+  });
+
+  res.json({ message: 'Contraseña actualizada correctamente' });
 });
 
 export default router;
