@@ -27,8 +27,15 @@ export default function Proveedores() {
   });
 
   const crear = useMutation({
-    mutationFn: (data: typeof form) => api.post('/proveedores', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['proveedores'] }); setOpen(false); setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' }); },
+    mutationFn: (values: typeof form) => {
+      const payload = { ...values, instructorId: values.instructorId || null };
+      return api.post('/proveedores', payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['proveedores'] });
+      setOpen(false);
+      setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
+    },
   });
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
@@ -95,7 +102,7 @@ export default function Proveedores() {
             <div>
               <Label>Vincular con Instructor (opcional)</Label>
               <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.instructorId} onChange={(e) => setForm({ ...form, instructorId: e.target.value })}>
-                <option value="">Sin vínculo</option>
+                <option value="">No aplica (Proveedor de proyectos / Otros)</option>
                 {(instructores as { id: string; usuario: { nombre: string } }[]).map((i) => (
                   <option key={i.id} value={i.id}>{i.usuario.nombre}</option>
                 ))}

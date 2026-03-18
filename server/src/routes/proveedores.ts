@@ -14,7 +14,12 @@ const schema = z.object({
   contacto: z.string().optional(),
   telefono: z.string().optional(),
   email: z.string().optional().nullable(),
-  instructorId: z.string().uuid().optional().nullable(),
+  instructorId: z.string()
+    .uuid()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
 });
 
 router.get('/', async (_req, res: Response) => {
