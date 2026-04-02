@@ -184,6 +184,20 @@ export default function Comunidades() {
                 <Input type="number" step="any" value={form.longitud} onChange={(e) => setForm({ ...form, longitud: e.target.value })} />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Recursos Naturales</Label>
+                <Input value={form.recursosNaturales} onChange={(e) => setForm({ ...form, recursosNaturales: e.target.value })} />
+              </div>
+              <div>
+                <Label>Economía Local</Label>
+                <Input value={form.economia} onChange={(e) => setForm({ ...form, economia: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Cultura y Tradiciones</Label>
+              <Input value={form.cultura} onChange={(e) => setForm({ ...form, cultura: e.target.value })} />
+            </div>
             <div>
               <Label>Infraestructura y Servicios</Label>
               <Input value={form.infraestructura} onChange={(e) => setForm({ ...form, infraestructura: e.target.value })} />

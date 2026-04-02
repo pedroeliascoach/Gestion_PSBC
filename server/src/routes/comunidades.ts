@@ -13,9 +13,9 @@ const schema = z.object({
   etapaActual: z.number().int().min(1).max(4).optional(),
   fechaIngreso: z.string(),
   fechaEgreso: z.string().optional().nullable(),
-  latitud: z.number().optional().nullable(),
-  longitud: z.number().optional().nullable(),
-  habitantes: z.number().int().optional().nullable(),
+  latitud: z.coerce.number().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
+  longitud: z.coerce.number().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
+  habitantes: z.coerce.number().int().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
   infraestructura: z.string().optional().nullable(),
   recursosNaturales: z.string().optional().nullable(),
   economia: z.string().optional().nullable(),
@@ -109,42 +109,35 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { 
-    nombre, municipio, estado, fechaEgreso, activa, 
-    latitud, longitud, habitantes, infraestructura, recursosNaturales, economia, cultura,
-    grupoDesarrolloFormado, fechaConstitucionGrupo, integrantesGrupo 
-  } = req.body;
-  
-  const data: any = {};
-  if (nombre) data.nombre = nombre;
-  if (municipio) data.municipio = municipio;
-  if (estado) data.estado = estado;
-  if (typeof activa === 'boolean') data.activa = activa;
-  if (fechaEgreso !== undefined) data.fechaEgreso = fechaEgreso ? new Date(fechaEgreso) : null;
-  
-  if (latitud !== undefined) data.latitud = latitud;
-  if (longitud !== undefined) data.longitud = longitud;
-  if (habitantes !== undefined) data.habitantes = habitantes;
-  if (infraestructura !== undefined) data.infraestructura = infraestructura;
-  if (recursosNaturales !== undefined) data.recursosNaturales = recursosNaturales;
-  if (economia !== undefined) data.economia = economia;
-  if (cultura !== undefined) data.cultura = cultura;
-  if (grupoDesarrolloFormado !== undefined) data.grupoDesarrolloFormado = grupoDesarrolloFormado;
-  if (fechaConstitucionGrupo !== undefined) data.fechaConstitucionGrupo = fechaConstitucionGrupo ? new Date(fechaConstitucionGrupo) : null;
+  try {
+    const { integrantesGrupo, ...rest } = req.body;
+    // Usamos el esquema para validar parcialmente los campos enviados
+    const parsed = schema.partial().safeParse(rest);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  if (integrantesGrupo && Array.isArray(integrantesGrupo)) {
-    data.integrantesGrupo = {
-      deleteMany: {},
-      create: integrantesGrupo.map((i: any) => ({
-        nombre: i.nombre,
-        edad: i.edad,
-        rol: i.rol
-      }))
-    };
+    const data: any = { ...parsed.data };
+    
+    // Convertmos fechas si existen
+    if (data.fechaEgreso) data.fechaEgreso = new Date(data.fechaEgreso);
+    if (data.fechaConstitucionGrupo) data.fechaConstitucionGrupo = new Date(data.fechaConstitucionGrupo);
+
+    if (integrantesGrupo && Array.isArray(integrantesGrupo)) {
+      data.integrantesGrupo = {
+        deleteMany: {},
+        create: integrantesGrupo.map((i: any) => ({
+          nombre: i.nombre,
+          edad: i.edad ? parseInt(i.edad) : null,
+          rol: i.rol
+        }))
+      };
+    }
+
+    const comunidad = await prisma.comunidad.update({ where: { id: req.params.id }, data });
+    res.json(comunidad);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error al actualizar comunidad' });
   }
-
-  const comunidad = await prisma.comunidad.update({ where: { id: req.params.id }, data });
-  res.json(comunidad);
 });
 
 router.patch('/:id/etapa', authorize('ADMIN'), async (req, res: Response) => {
