@@ -15,7 +15,7 @@ export default function Proveedores() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
+  const [form, setForm] = useState({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '', password: '' });
 
   const { data: proveedores = [], isLoading } = useQuery({
     queryKey: ['proveedores'],
@@ -56,7 +56,7 @@ export default function Proveedores() {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '' });
+    setForm({ nombre: '', rfc: '', contacto: '', telefono: '', email: '', instructorId: '', password: '' });
   };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
@@ -137,8 +137,14 @@ export default function Proveedores() {
             <div><Label>Contacto</Label><Input value={form.contacto} onChange={(e) => setForm({ ...form, contacto: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label>Teléfono</Label><Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></div>
-              <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label>Email (Acceso)</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             </div>
+            {!editingId && (
+              <div>
+                <Label>Contraseña para Acceso</Label>
+                <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>

@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { upload } from '../middleware/upload';
-import { EstatusPago, TipoEntregable } from '@prisma/client';
+import { EstatusPago, TipoEntregable, Rol } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate);
@@ -13,7 +14,8 @@ const schema = z.object({
   rfc: z.string().min(1),
   contacto: z.string().optional(),
   telefono: z.string().optional(),
-  email: z.string().optional().nullable(),
+  email: z.string().email(),
+  password: z.string().min(6).optional(), // Solo requerido si no se vincula a instructor
   instructorId: z.string()
     .uuid()
     .optional()
@@ -112,29 +114,65 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-    const requisitos = await prisma.requisitoCatalogo.findMany({ where: { activo: true } });
+    const { nombre, rfc, contacto, telefono, email, password, instructorId } = parsed.data;
 
-    const proveedor = await prisma.proveedor.create({
-      data: {
-        nombre: parsed.data.nombre,
-        rfc: parsed.data.rfc,
-        contacto: parsed.data.contacto ?? null,
-        telefono: parsed.data.telefono ?? null,
-        email: parsed.data.email || null,
-        instructorId: parsed.data.instructorId || null,
-        requisitos: {
-          create: requisitos.map((r) => ({ requisitoId: r.id })),
+    // Verificar si el usuario ya existe
+    const userExists = await prisma.usuario.findUnique({ where: { email } });
+    if (userExists && !instructorId) {
+      return res.status(409).json({ error: 'El email ya está registrado' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let finalUsuarioId = userExists?.id;
+
+      // Si no existe el usuario y no hay instructorId, creamos uno nuevo
+      if (!finalUsuarioId && !instructorId) {
+        if (!password) throw new Error('Se requiere contraseña para nuevos proveedores');
+        const hash = await bcrypt.hash(password, 10);
+        const newUser = await tx.usuario.create({
+          data: {
+            nombre,
+            email,
+            password: hash,
+            rol: Rol.PROVEEDOR
+          }
+        });
+        finalUsuarioId = newUser.id;
+      }
+
+      // Si hay instructorId, usamos el usuarioId del instructor
+      if (instructorId) {
+        const inst = await tx.instructor.findUnique({ where: { id: instructorId } });
+        if (!inst) throw new Error('Instructor no encontrado');
+        finalUsuarioId = inst.usuarioId;
+      }
+
+      const requisitos = await tx.requisitoCatalogo.findMany({ where: { activo: true } });
+
+      return tx.proveedor.create({
+        data: {
+          nombre,
+          rfc,
+          contacto: contacto ?? null,
+          telefono: telefono ?? null,
+          email: email || null,
+          instructorId: instructorId || null,
+          usuarioId: finalUsuarioId,
+          requisitos: {
+            create: requisitos.map((r) => ({ requisitoId: r.id })),
+          },
+          entregables: {
+            create: [
+              { tipo: TipoEntregable.REPORTE_FINAL },
+              { tipo: TipoEntregable.FACTURA },
+            ],
+          },
         },
-        entregables: {
-          create: [
-            { tipo: TipoEntregable.REPORTE_FINAL },
-            { tipo: TipoEntregable.FACTURA },
-          ],
-        },
-      },
-      include: { requisitos: { include: { requisito: true } }, entregables: true },
+        include: { requisitos: { include: { requisito: true } }, entregables: true },
+      });
     });
-    res.status(201).json(proveedor);
+
+    res.status(201).json(result);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Error al crear proveedor';
     console.error(e);
