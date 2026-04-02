@@ -128,6 +128,30 @@ export default function ComunidadDetalle() {
                 </div>
               </div>
             </div>
+
+            {c.latitud && c.longitud && (
+              <div className="pt-4 border-t">
+                <Label className="text-xs text-gray-500 uppercase mb-2 block">Mapa de Ubicación</Label>
+                <div className="rounded-lg overflow-hidden border h-[300px]">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(c.longitud) - 0.01},${Number(c.latitud) - 0.01},${Number(c.longitud) + 0.01},${Number(c.latitud) + 0.01}&layer=mapnik&marker=${c.latitud},${c.longitud}`}
+                  />
+                </div>
+                <div className="mt-2 text-right">
+                  <a 
+                    href={`https://www.openstreetmap.org/?mlat=${c.latitud}&mlon=${c.longitud}#map=16/${c.latitud}/${c.longitud}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Ver en mapa más grande
+                  </a>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
