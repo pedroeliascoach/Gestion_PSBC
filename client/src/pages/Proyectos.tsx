@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDate, formatCurrency, ESTATUS_PROYECTO } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Plus, FolderOpen, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ export default function Proyectos() {
   const [form, setForm] = useState({
     nombre: '', descripcion: '', comunidadId: '', proveedorId: '',
     fechaInicio: '', fechaFin: '', presupuesto: '',
+    componente: '',
   });
 
   const { data: items = [], isLoading } = useQuery({
@@ -55,6 +57,7 @@ export default function Proyectos() {
       fechaInicio: proy.fechaInicio ? proy.fechaInicio.split('T')[0] : '',
       fechaFin: proy.fechaFin ? proy.fechaFin.split('T')[0] : '',
       presupuesto: proy.presupuesto ? String(proy.presupuesto) : '',
+      componente: proy.componente || '',
     });
     setOpen(true);
   };
@@ -65,6 +68,7 @@ export default function Proyectos() {
     setForm({
       nombre: '', descripcion: '', comunidadId: '', proveedorId: '',
       fechaInicio: '', fechaFin: '', presupuesto: '',
+      componente: '',
     });
   };
 
@@ -95,16 +99,17 @@ export default function Proyectos() {
       </div>
 
       <div className="space-y-3">
-        {items.map((proy: { id: string; nombre: string; estatus: string; fechaInicio?: string; fechaFin?: string; presupuesto?: string; comunidad: { nombre: string; municipio: string }; proveedor?: { nombre: string } }) => {
+        {items.map((proy: { id: string; nombre: string; estatus: string; fechaInicio?: string; fechaFin?: string; presupuesto?: string; componente?: string; comunidad: { nombre: string; municipio: string }; proveedor?: { nombre: string } }) => {
           const est = ESTATUS_PROYECTO[proy.estatus];
           return (
             <Card key={proy.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <FolderOpen className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                      <p className="font-semibold text-sm">{proy.nombre}</p>
+                      <p className="font-semibold text-sm mr-2">{proy.nombre}</p>
+                      {proy.componente && <Badge variant="outline" className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-100">{proy.componente.replace(/_/g, ' ')}</Badge>}
                     </div>
                     <p className="text-xs text-gray-500">{proy.comunidad.nombre}, {proy.comunidad.municipio}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -158,6 +163,18 @@ export default function Proyectos() {
               </select>
             </div>
             <div><Label>Presupuesto (MXN)</Label><Input type="number" value={form.presupuesto} onChange={(e) => setForm({ ...form, presupuesto: e.target.value })} placeholder="0.00" /></div>
+            <div>
+              <Label>Componente del Programa</Label>
+              <select className="w-full border rounded-md px-3 py-2 text-sm text-indigo-700 font-medium" value={form.componente} onChange={(e) => setForm({ ...form, componente: e.target.value })}>
+                <option value="">No aplica / Por definir</option>
+                <option value="EDUCACION_SALUD">Educación para la Salud</option>
+                <option value="CUIDADO_AMBIENTE">Cuidado del Medio Ambiente</option>
+                <option value="PROYECTOS_PRODUCTIVOS">Proyectos Productivos</option>
+                <option value="CULTURA_PAZ">Cultura de Paz y Cohesión Social</option>
+                <option value="ESTILOS_VIDA">Estilos de Vida Saludables</option>
+                <option value="REHABILITACION">Rehabilitación con Base Comunitaria</option>
+              </select>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label>Fecha Inicio</Label><Input type="date" value={form.fechaInicio} onChange={(e) => setForm({ ...form, fechaInicio: e.target.value })} /></div>
               <div><Label>Fecha Fin</Label><Input type="date" value={form.fechaFin} onChange={(e) => setForm({ ...form, fechaFin: e.target.value })} /></div>

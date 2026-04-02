@@ -20,7 +20,12 @@ export default function Comunidades() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [etapaFilter, setEtapaFilter] = useState('');
-  const [form, setForm] = useState({ nombre: '', municipio: '', fechaIngreso: '' });
+  const [form, setForm] = useState({ 
+    nombre: '', municipio: '', fechaIngreso: '', 
+    latitud: '', longitud: '', habitantes: '', 
+    infraestructura: '', recursosNaturales: '', economia: '', cultura: '',
+    grupoDesarrolloFormado: false, fechaConstitucionGrupo: ''
+  });
 
   const { data: comunidades = [], isLoading } = useQuery({
     queryKey: ['comunidades', etapaFilter],
@@ -44,6 +49,15 @@ export default function Comunidades() {
       nombre: c.nombre,
       municipio: c.municipio,
       fechaIngreso: c.fechaIngreso ? c.fechaIngreso.split('T')[0] : '',
+      latitud: c.latitud?.toString() || '',
+      longitud: c.longitud?.toString() || '',
+      habitantes: c.habitantes?.toString() || '',
+      infraestructura: c.infraestructura || '',
+      recursosNaturales: c.recursosNaturales || '',
+      economia: c.economia || '',
+      cultura: c.cultura || '',
+      grupoDesarrolloFormado: c.grupoDesarrolloFormado || false,
+      fechaConstitucionGrupo: c.fechaConstitucionGrupo ? c.fechaConstitucionGrupo.split('T')[0] : '',
     });
     setOpen(true);
   };
@@ -51,7 +65,12 @@ export default function Comunidades() {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setForm({ nombre: '', municipio: '', fechaIngreso: '' });
+    setForm({ 
+      nombre: '', municipio: '', fechaIngreso: '', 
+      latitud: '', longitud: '', habitantes: '', 
+      infraestructura: '', recursosNaturales: '', economia: '', cultura: '',
+      grupoDesarrolloFormado: false, fechaConstitucionGrupo: ''
+    });
   };
 
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>;
@@ -135,18 +154,55 @@ export default function Comunidades() {
         <DialogContent>
           <DialogHeader><DialogTitle>{editingId ? 'Editar Comunidad' : 'Nueva Comunidad'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>Nombre</Label>
-              <Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Nombre de la comunidad" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nombre</Label>
+                <Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+              </div>
+              <div>
+                <Label>Municipio</Label>
+                <Input value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Fecha Ingreso</Label>
+                <Input type="date" value={form.fechaIngreso} onChange={(e) => setForm({ ...form, fechaIngreso: e.target.value })} />
+              </div>
+              <div>
+                <Label>Habitantes</Label>
+                <Input type="number" value={form.habitantes} onChange={(e) => setForm({ ...form, habitantes: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Latitud</Label>
+                <Input type="number" step="any" value={form.latitud} onChange={(e) => setForm({ ...form, latitud: e.target.value })} />
+              </div>
+              <div>
+                <Label>Longitud</Label>
+                <Input type="number" step="any" value={form.longitud} onChange={(e) => setForm({ ...form, longitud: e.target.value })} />
+              </div>
             </div>
             <div>
-              <Label>Municipio</Label>
-              <Input value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} placeholder="Municipio" />
+              <Label>Infraestructura y Servicios</Label>
+              <Input value={form.infraestructura} onChange={(e) => setForm({ ...form, infraestructura: e.target.value })} />
             </div>
-            <div>
-              <Label>Fecha de Ingreso al Programa</Label>
-              <Input type="date" value={form.fechaIngreso} onChange={(e) => setForm({ ...form, fechaIngreso: e.target.value })} />
+            <div className="flex items-center gap-2 py-2">
+              <input 
+                type="checkbox" 
+                id="grupoFormado"
+                checked={form.grupoDesarrolloFormado} 
+                onChange={(e) => setForm({ ...form, grupoDesarrolloFormado: e.target.checked })} 
+              />
+              <Label htmlFor="grupoFormado">¿Grupo de Desarrollo formado?</Label>
             </div>
+            {form.grupoDesarrolloFormado && (
+              <div>
+                <Label>Fecha de Constitución del Grupo</Label>
+                <Input type="date" value={form.fechaConstitucionGrupo} onChange={(e) => setForm({ ...form, fechaConstitucionGrupo: e.target.value })} />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>

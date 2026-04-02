@@ -16,10 +16,19 @@ export function formatCurrency(amount: number | null | undefined) {
 }
 
 export const ETAPAS: Record<number, { label: string; color: string }> = {
-  1: { label: 'Etapa 1 - Diagnóstico', color: 'bg-blue-100 text-blue-800' },
-  2: { label: 'Etapa 2 - Implementación', color: 'bg-yellow-100 text-yellow-800' },
-  3: { label: 'Etapa 3 - Consolidación', color: 'bg-orange-100 text-orange-800' },
-  4: { label: 'Etapa 4 - Sustentabilidad', color: 'bg-green-100 text-green-800' },
+  1: { label: 'Apertura', color: 'bg-blue-100 text-blue-800' },
+  2: { label: 'Continuidad', color: 'bg-yellow-100 text-yellow-800' },
+  3: { label: 'Consolidación', color: 'bg-orange-100 text-orange-800' },
+  4: { label: 'Salida', color: 'bg-green-100 text-green-800' },
+};
+
+export const COMPONENTES_PROGRAMA: Record<string, string> = {
+  AUTOCUIDADO: 'Autocuidado',
+  ALIMENTACION: 'Alimentación',
+  ECONOMIA_SOLIDARIA: 'Economía solidaria',
+  ESPACIOS_HABITABLES: 'Espacios habitables sustentables',
+  GESTION_RIESGOS: 'Gestión integral de riesgos',
+  RECREACION: 'Recreación',
 };
 
 export const ESTATUS_CAPACITACION: Record<string, { label: string; color: string }> = {

@@ -13,6 +13,15 @@ const schema = z.object({
   etapaActual: z.number().int().min(1).max(4).optional(),
   fechaIngreso: z.string(),
   fechaEgreso: z.string().optional().nullable(),
+  latitud: z.number().optional().nullable(),
+  longitud: z.number().optional().nullable(),
+  habitantes: z.number().int().optional().nullable(),
+  infraestructura: z.string().optional().nullable(),
+  recursosNaturales: z.string().optional().nullable(),
+  economia: z.string().optional().nullable(),
+  cultura: z.string().optional().nullable(),
+  grupoDesarrolloFormado: z.boolean().optional(),
+  fechaConstitucionGrupo: z.string().optional().nullable(),
 });
 
 router.get('/', async (req: AuthRequest, res: Response) => {
@@ -51,6 +60,7 @@ router.get('/:id', async (req, res: Response) => {
       visitas: { orderBy: { fecha: 'desc' }, take: 10 },
       presupuestos: { include: { gastos: true } },
       historicoEtapas: { orderBy: { fechaInicio: 'asc' } },
+      integrantesGrupo: true,
     },
   });
   if (!c) return res.status(404).json({ error: 'Comunidad no encontrada' });
@@ -62,7 +72,12 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-    const { nombre, municipio, estado, etapaActual, fechaIngreso, fechaEgreso } = parsed.data;
+    const { 
+      nombre, municipio, estado, etapaActual, fechaIngreso, fechaEgreso,
+      latitud, longitud, habitantes, infraestructura, recursosNaturales, economia, cultura,
+      grupoDesarrolloFormado, fechaConstitucionGrupo
+    } = parsed.data;
+    
     const etapa = etapaActual ?? 1;
     const fechaIngresoDate = fechaIngreso ? new Date(fechaIngreso) : new Date();
 
@@ -74,6 +89,15 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
         etapaActual: etapa,
         fechaIngreso: fechaIngresoDate,
         fechaEgreso: fechaEgreso ? new Date(fechaEgreso) : null,
+        latitud,
+        longitud,
+        habitantes,
+        infraestructura,
+        recursosNaturales,
+        economia,
+        cultura,
+        grupoDesarrolloFormado: grupoDesarrolloFormado ?? false,
+        fechaConstitucionGrupo: fechaConstitucionGrupo ? new Date(fechaConstitucionGrupo) : null,
         historicoEtapas: { create: { etapa, fechaInicio: fechaIngresoDate } },
       },
     });
@@ -85,13 +109,39 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { nombre, municipio, estado, fechaEgreso, activa } = req.body;
-  const data: Record<string, unknown> = {};
+  const { 
+    nombre, municipio, estado, fechaEgreso, activa, 
+    latitud, longitud, habitantes, infraestructura, recursosNaturales, economia, cultura,
+    grupoDesarrolloFormado, fechaConstitucionGrupo, integrantesGrupo 
+  } = req.body;
+  
+  const data: any = {};
   if (nombre) data.nombre = nombre;
   if (municipio) data.municipio = municipio;
   if (estado) data.estado = estado;
   if (typeof activa === 'boolean') data.activa = activa;
   if (fechaEgreso !== undefined) data.fechaEgreso = fechaEgreso ? new Date(fechaEgreso) : null;
+  
+  if (latitud !== undefined) data.latitud = latitud;
+  if (longitud !== undefined) data.longitud = longitud;
+  if (habitantes !== undefined) data.habitantes = habitantes;
+  if (infraestructura !== undefined) data.infraestructura = infraestructura;
+  if (recursosNaturales !== undefined) data.recursosNaturales = recursosNaturales;
+  if (economia !== undefined) data.economia = economia;
+  if (cultura !== undefined) data.cultura = cultura;
+  if (grupoDesarrolloFormado !== undefined) data.grupoDesarrolloFormado = grupoDesarrolloFormado;
+  if (fechaConstitucionGrupo !== undefined) data.fechaConstitucionGrupo = fechaConstitucionGrupo ? new Date(fechaConstitucionGrupo) : null;
+
+  if (integrantesGrupo && Array.isArray(integrantesGrupo)) {
+    data.integrantesGrupo = {
+      deleteMany: {},
+      create: integrantesGrupo.map((i: any) => ({
+        nombre: i.nombre,
+        edad: i.edad,
+        rol: i.rol
+      }))
+    };
+  }
 
   const comunidad = await prisma.comunidad.update({ where: { id: req.params.id }, data });
   res.json(comunidad);

@@ -48,6 +48,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
       rol,
       ...(rol === 'PROMOTOR' ? { promotor: { create: {} } } : {}),
       ...(rol === 'INSTRUCTOR' ? { instructor: { create: {} } } : {}),
+      ...((rol as any) === 'PROVEEDOR' ? { proveedor: { create: { nombre, rfc: 'TEMPORAL' } } } : {}),
     },
     select: { id: true, nombre: true, email: true, rol: true, activo: true },
   });

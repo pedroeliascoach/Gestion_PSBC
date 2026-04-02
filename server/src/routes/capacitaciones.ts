@@ -15,6 +15,7 @@ const schema = z.object({
   fechaFin: z.string().optional().nullable(),
   proveedorId: z.string().uuid().optional().nullable(),
   instructorIds: z.array(z.string().uuid()).optional(),
+  componente: z.string().optional().nullable(),
 });
 
 router.get('/', async (req: AuthRequest, res: Response) => {
@@ -69,7 +70,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const { titulo, descripcion, comunidadId, fechaInicio, fechaFin, proveedorId, instructorIds } = parsed.data;
+  const { titulo, descripcion, comunidadId, fechaInicio, fechaFin, proveedorId, instructorIds, componente } = parsed.data;
 
   const capacitacion = await prisma.capacitacion.create({
     data: {
@@ -79,6 +80,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
       fechaInicio: fechaInicio ? new Date(fechaInicio) : null,
       fechaFin: fechaFin ? new Date(fechaFin) : null,
       proveedorId: proveedorId ?? null,
+      componente: (componente as any) ?? null,
       instructores: instructorIds?.length
         ? { create: instructorIds.map((id) => ({ instructorId: id })) }
         : undefined,
@@ -89,13 +91,14 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { titulo, descripcion, fechaInicio, fechaFin, proveedorId, instructorIds } = req.body;
+  const { titulo, descripcion, fechaInicio, fechaFin, proveedorId, instructorIds, componente } = req.body;
   const data: Record<string, unknown> = {};
   if (titulo) data.titulo = titulo;
   if (descripcion !== undefined) data.descripcion = descripcion;
   if (fechaInicio !== undefined) data.fechaInicio = fechaInicio ? new Date(fechaInicio) : null;
   if (fechaFin !== undefined) data.fechaFin = fechaFin ? new Date(fechaFin) : null;
   if (proveedorId !== undefined) data.proveedorId = proveedorId || null;
+  if (componente !== undefined) data.componente = componente || null;
 
   if (instructorIds) {
     await prisma.capacitacionInstructor.deleteMany({ where: { capacitacionId: req.params.id } });

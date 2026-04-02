@@ -20,7 +20,7 @@ export default function ComunidadDetalle() {
   const isAdmin = user?.rol === 'ADMIN';
   const [etapaDialog, setEtapaDialog] = useState(false);
   const [nuevaEtapa, setNuevaEtapa] = useState('');
-  const [tab, setTab] = useState<'capacitaciones' | 'proyectos' | 'presupuesto' | 'historial'>('capacitaciones');
+  const [tab, setTab] = useState<'capacitaciones' | 'proyectos' | 'presupuesto' | 'historial' | 'diagnostico' | 'grupo'>('capacitaciones');
 
   const { data: c, isLoading } = useQuery({
     queryKey: ['comunidad', id],
@@ -55,10 +55,11 @@ export default function ComunidadDetalle() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card><CardContent className="p-3 text-center"><p className="text-xl font-bold">{c.capacitaciones?.length ?? 0}</p><p className="text-xs text-gray-500">Capacitaciones</p></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><p className="text-xl font-bold">{c.proyectos?.length ?? 0}</p><p className="text-xs text-gray-500">Proyectos</p></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><p className="text-xl font-bold">{c.visitas?.length ?? 0}</p><p className="text-xs text-gray-500">Visitas</p></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><p className="text-xl font-bold">{c.habitantes ?? '—'}</p><p className="text-xs text-gray-500">Habitantes</p></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><p className="text-sm font-bold">{formatCurrency(gastadoTotal)}</p><p className="text-xs text-gray-500">Gastado</p></CardContent></Card>
       </div>
 
@@ -76,18 +77,100 @@ export default function ComunidadDetalle() {
         </Card>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b">
-        {([['capacitaciones', 'Capacitaciones', BookOpen], ['proyectos', 'Proyectos', FolderOpen], ['presupuesto', 'Presupuesto', DollarSign], ['historial', 'Historial Etapas', History]] as const).map(([key, label, Icon]) => (
+      <div className="flex gap-1 border-b overflow-x-auto no-scrollbar">
+        {([
+          ['capacitaciones', 'Capacitaciones', BookOpen], 
+          ['proyectos', 'Proyectos', FolderOpen], 
+          ['diagnostico', 'Información Gral.', Users],
+          ['grupo', 'Grupo Desarrollo', Users],
+          ['presupuesto', 'Presupuesto', DollarSign], 
+          ['historial', 'Historial', History]
+        ] as const).map(([key, label, Icon]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex items-center gap-1 px-3 py-2 text-sm border-b-2 transition-colors ${tab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            className={`flex items-center gap-1 px-3 py-2 text-sm border-b-2 transition-colors whitespace-nowrap ${tab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           >
             <Icon className="h-3.5 w-3.5" />{label}
           </button>
         ))}
       </div>
+
+      {tab === 'diagnostico' && (
+        <Card>
+          <CardContent className="p-4 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-gray-500 uppercase">Ubicación Geográfica</Label>
+                  <p className="text-sm font-medium">Lat: {c.latitud ?? '—'} / Lon: {c.longitud ?? '—'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500 uppercase">Recursos Naturales</Label>
+                  <p className="text-sm">{c.recursosNaturales || 'Sin información'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500 uppercase">Infraestructura y Servicios</Label>
+                  <p className="text-sm">{c.infraestructura || 'Sin información'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-gray-500 uppercase">Economía Local</Label>
+                  <p className="text-sm">{c.economia || 'Sin información'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500 uppercase">Cultura y Tradiciones</Label>
+                  <p className="text-sm">{c.cultura || 'Sin información'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === 'grupo' && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-sm">Estatus del Grupo de Desarrollo</CardTitle>
+                <Badge variant={c.grupoDesarrolloFormado ? 'default' : 'secondary'}>
+                  {c.grupoDesarrolloFormado ? 'Constituido' : 'No Formado'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {c.grupoDesarrolloFormado ? (
+                <p className="text-sm">Fecha de constitución: <strong>{formatDate(c.fechaConstitucionGrupo)}</strong></p>
+              ) : (
+                <p className="text-sm text-gray-500 italic">Aún no se ha registrado la formación del grupo de desarrollo.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {c.grupoDesarrolloFormado && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold flex items-center gap-2"><Users className="h-4 w-4" /> Integrantes del Grupo</h3>
+              {c.integrantesGrupo?.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6 border rounded-lg">No hay integrantes registrados</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {c.integrantesGrupo?.map((i: any) => (
+                    <div key={i.id} className="p-3 border rounded-lg bg-white flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-sm text-gray-900">{i.nombre}</p>
+                        <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">{i.rol || 'Integrante'}</p>
+                      </div>
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{i.edad} años</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {tab === 'capacitaciones' && (
         <div className="space-y-2">

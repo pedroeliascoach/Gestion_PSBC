@@ -21,6 +21,7 @@ import ProveedorDetalle from '@/pages/ProveedorDetalle';
 import Requisitos from '@/pages/Requisitos';
 import Galeria from '@/pages/Galeria';
 import Calendario from '@/pages/Calendario';
+import ProveedorDashboard from '@/pages/ProveedorDashboard';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
 
@@ -31,6 +32,7 @@ function AppRoutes() {
     if (!user) return <Navigate to="/login" replace />;
     if (user.rol === 'ADMIN') return <Navigate to="/dashboard" replace />;
     if (user.rol === 'PROMOTOR') return <Navigate to="/comunidades" replace />;
+    if (user.rol === 'PROVEEDOR') return <Navigate to="/proveedor/dashboard" replace />;
     return <Navigate to="/capacitaciones" replace />;
   };
 
@@ -58,6 +60,7 @@ function AppRoutes() {
                 <Route path="/presupuesto" element={<PrivateRoute roles={['ADMIN']}><Presupuesto /></PrivateRoute>} />
                 <Route path="/proveedores" element={<PrivateRoute roles={['ADMIN']}><Proveedores /></PrivateRoute>} />
                 <Route path="/proveedores/:id" element={<PrivateRoute roles={['ADMIN']}><ProveedorDetalle /></PrivateRoute>} />
+                <Route path="/proveedor/dashboard" element={<PrivateRoute roles={['PROVEEDOR']}><ProveedorDashboard /></PrivateRoute>} />
                 <Route path="/requisitos" element={<PrivateRoute roles={['ADMIN']}><Requisitos /></PrivateRoute>} />
                 <Route path="/galeria" element={<Galeria />} />
                 <Route path="/calendario" element={<Calendario />} />

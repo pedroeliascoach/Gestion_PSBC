@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, ESTATUS_CAPACITACION } from '@/lib/utils';
 import { Plus, BookOpen, AlertCircle, CheckCircle, Pencil } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function Capacitaciones() {
   const [form, setForm] = useState({
     titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
     fechaInicio: '', fechaFin: '', instructorIds: [] as string[],
+    componente: '',
   });
 
   const { data: items = [], isLoading } = useQuery({
@@ -71,6 +73,7 @@ export default function Capacitaciones() {
       fechaInicio: cap.fechaInicio ? cap.fechaInicio.split('T')[0] : '',
       fechaFin: cap.fechaFin ? cap.fechaFin.split('T')[0] : '',
       instructorIds: cap.instructores.map((ci: any) => ci.instructorId),
+      componente: cap.componente || '',
     });
     setOpen(true);
   };
@@ -81,6 +84,7 @@ export default function Capacitaciones() {
     setForm({
       titulo: '', descripcion: '', comunidadId: '', proveedorId: '',
       fechaInicio: '', fechaFin: '', instructorIds: [],
+      componente: '',
     });
   };
 
@@ -116,6 +120,7 @@ export default function Capacitaciones() {
       <div className="space-y-3">
         {items.map((cap: {
           id: string; titulo: string; estatus: string; fechaInicio?: string; fechaFin?: string;
+          componente?: string;
           comunidad: { nombre: string; municipio: string };
           proveedor?: { nombre: string };
           instructores: { instructor: { usuario: { nombre: string } } }[];
@@ -126,9 +131,10 @@ export default function Capacitaciones() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <BookOpen className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                      <Link to={`/capacitaciones/${cap.id}`} className="font-semibold text-sm hover:text-blue-600">{cap.titulo}</Link>
+                      <Link to={`/capacitaciones/${cap.id}`} className="font-semibold text-sm hover:text-blue-600 mr-2">{cap.titulo}</Link>
+                      {cap.componente && <Badge variant="outline" className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-100">{cap.componente.replace(/_/g, ' ')}</Badge>}
                     </div>
                     <p className="text-xs text-gray-500">{cap.comunidad.nombre}, {cap.comunidad.municipio}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -189,6 +195,18 @@ export default function Capacitaciones() {
               <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.proveedorId} onChange={(e) => setForm({ ...form, proveedorId: e.target.value })}>
                 <option value="">Sin proveedor</option>
                 {proveedores.map((p: { id: string; nombre: string }) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Componente del Programa</Label>
+              <select className="w-full border rounded-md px-3 py-2 text-sm text-indigo-700 font-medium" value={form.componente} onChange={(e) => setForm({ ...form, componente: e.target.value })}>
+                <option value="">No aplica / Por definir</option>
+                <option value="EDUCACION_SALUD">Educación para la Salud</option>
+                <option value="CUIDADO_AMBIENTE">Cuidado del Medio Ambiente</option>
+                <option value="PROYECTOS_PRODUCTIVOS">Proyectos Productivos</option>
+                <option value="CULTURA_PAZ">Cultura de Paz y Cohesión Social</option>
+                <option value="ESTILOS_VIDA">Estilos de Vida Saludables</option>
+                <option value="REHABILITACION">Rehabilitación con Base Comunitaria</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-2">

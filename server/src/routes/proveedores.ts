@@ -22,6 +22,20 @@ const schema = z.object({
     .transform((val) => (val === '' ? null : val)),
 });
 
+router.get('/me', async (req: any, res: Response) => {
+  const p = await prisma.proveedor.findFirst({
+    where: { usuarioId: req.user.id } as any,
+    include: {
+      requisitos: { include: { requisito: true }, orderBy: { requisito: { orden: 'asc' } } },
+      entregables: true,
+      capacitaciones: { include: { comunidad: { select: { nombre: true } } } },
+      proyectos: { include: { comunidad: { select: { nombre: true } } } },
+    },
+  });
+  if (!p) return res.status(404).json({ error: 'Perfil de proveedor no encontrado' });
+  res.json(p);
+});
+
 router.get('/', async (_req, res: Response) => {
   const proveedores = await prisma.proveedor.findMany({
     include: {

@@ -15,6 +15,7 @@ const schema = z.object({
   fechaFin: z.string().optional().nullable(),
   presupuesto: z.number().optional().nullable(),
   proveedorId: z.string().uuid().optional().nullable(),
+  componente: z.string().optional().nullable(),
 });
 
 router.get('/', async (req: AuthRequest, res: Response) => {
@@ -61,7 +62,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const { nombre, descripcion, comunidadId, fechaInicio, fechaFin, presupuesto, proveedorId } = parsed.data;
+  const { nombre, descripcion, comunidadId, fechaInicio, fechaFin, presupuesto, proveedorId, componente } = parsed.data;
   const proyecto = await prisma.proyecto.create({
     data: {
       nombre,
@@ -71,6 +72,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
       fechaFin: fechaFin ? new Date(fechaFin) : null,
       presupuesto: presupuesto ?? null,
       proveedorId: proveedorId ?? null,
+      componente: (componente as any) ?? null,
     },
     include: { comunidad: true },
   });
@@ -78,7 +80,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { nombre, descripcion, fechaInicio, fechaFin, presupuesto, proveedorId } = req.body;
+  const { nombre, descripcion, fechaInicio, fechaFin, presupuesto, proveedorId, componente } = req.body;
   const data: Record<string, unknown> = {};
   if (nombre) data.nombre = nombre;
   if (descripcion !== undefined) data.descripcion = descripcion;
@@ -86,6 +88,7 @@ router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
   if (fechaFin !== undefined) data.fechaFin = fechaFin ? new Date(fechaFin) : null;
   if (presupuesto !== undefined) data.presupuesto = presupuesto;
   if (proveedorId !== undefined) data.proveedorId = proveedorId || null;
+  if (componente !== undefined) data.componente = componente || null;
 
   const proyecto = await prisma.proyecto.update({ where: { id: req.params.id }, data });
   res.json(proyecto);

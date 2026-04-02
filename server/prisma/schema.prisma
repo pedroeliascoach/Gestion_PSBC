@@ -11,6 +11,16 @@ enum Rol {
   ADMIN
   PROMOTOR
   INSTRUCTOR
+  PROVEEDOR
+}
+
+enum ComponentePrograma {
+  AUTOCUIDADO
+  ALIMENTACION
+  ECONOMIA_SOLIDARIA
+  ESPACIOS_HABITABLES
+  GESTION_RIESGOS
+  RECREACION
 }
 
 enum EstatusCapacitacion {
@@ -57,6 +67,7 @@ model Usuario {
 
   promotor   Promotor?
   instructor Instructor?
+  proveedor  Proveedor?
 }
 
 model Promotor {
@@ -88,6 +99,21 @@ model Comunidad {
   etapaActual  Int       @default(1)
   fechaIngreso DateTime
   fechaEgreso  DateTime?
+  
+  // Nuevos campos de información general
+  latitud      Decimal?  @db.Decimal(10, 8)
+  longitud     Decimal?  @db.Decimal(11, 8)
+  habitantes   Int?
+  infraestructura String? @db.Text
+  recursosNaturales String? @db.Text
+  economia      String? @db.Text
+  cultura       String? @db.Text
+  
+  // Grupo de Desarrollo
+  grupoDesarrolloFormado Boolean @default(false)
+  fechaConstitucionGrupo DateTime?
+  integrantesGrupo       IntegranteGrupoDesarrollo[]
+
   activa       Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -125,6 +151,17 @@ model HistoricoEtapa {
   comunidad Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
 }
 
+model IntegranteGrupoDesarrollo {
+  id          String   @id @default(uuid())
+  comunidadId String
+  nombre      String
+  edad        Int?
+  rol         String?  // Puesto en el grupo de desarrollo
+  createdAt   DateTime @default(now())
+
+  comunidad Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+}
+
 model Capacitacion {
   id          String              @id @default(uuid())
   titulo      String
@@ -133,6 +170,7 @@ model Capacitacion {
   fechaInicio DateTime?
   fechaFin    DateTime?
   estatus     EstatusCapacitacion @default(PLANEADA)
+  componente  ComponentePrograma?
   proveedorId String?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -163,6 +201,7 @@ model Proyecto {
   fechaInicio DateTime?
   fechaFin    DateTime?
   estatus     EstatusProyecto @default(PLANEADO)
+  componente  ComponentePrograma?
   presupuesto Decimal?        @db.Decimal(12, 2)
   proveedorId String?
   createdAt   DateTime        @default(now())
@@ -278,9 +317,11 @@ model Proveedor {
   email       String?
   activo      Boolean @default(true)
   instructorId String? @unique
+  usuarioId   String? @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  usuario        Usuario?             @relation(fields: [usuarioId], references: [id])
   instructor     Instructor?          @relation(fields: [instructorId], references: [id])
   requisitos     ProveedorRequisito[]
   capacitaciones Capacitacion[]

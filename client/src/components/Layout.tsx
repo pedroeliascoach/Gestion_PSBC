@@ -30,8 +30,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
+  { path: '/proveedor/dashboard', label: 'Mi Panel (Proveedor)', icon: LayoutDashboard, roles: ['PROVEEDOR'] },
   { path: '/calendario', label: 'Calendario', icon: Calendar, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
-  { path: '/comunidades', label: 'Comunidades', icon: MapPin, roles: ['ADMIN', 'PROMOTOR'] },
+  { path: '/comunidades', label: 'Comunidades', icon: MapPin, roles: ['ADMIN', 'PROMOTOR', 'PROVEEDOR'] },
   { path: '/promotores', label: 'Promotores', icon: Users, roles: ['ADMIN'] },
   { path: '/instructores', label: 'Instructores', icon: GraduationCap, roles: ['ADMIN'] },
   { path: '/capacitaciones', label: 'Capacitaciones', icon: BookOpen, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
@@ -42,7 +43,7 @@ const navItems: NavItem[] = [
   { path: '/presupuesto', label: 'Presupuesto', icon: DollarSign, roles: ['ADMIN'] },
   { path: '/proveedores', label: 'Proveedores', icon: Truck, roles: ['ADMIN'] },
   { path: '/requisitos', label: 'Catálogo Requisitos', icon: ClipboardList, roles: ['ADMIN'] },
-  { path: '/galeria', label: 'Galería', icon: Image, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR'] },
+  { path: '/galeria', label: 'Galería', icon: Image, roles: ['ADMIN', 'PROMOTOR', 'INSTRUCTOR', 'PROVEEDOR'] },
 ];
 
 import logo from '@/assets/logo.png';
