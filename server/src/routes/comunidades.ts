@@ -149,10 +149,20 @@ router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
 
 router.patch('/:id/etapa', authorize('ADMIN'), async (req, res: Response) => {
   const { etapa } = req.body;
-  if (!etapa || etapa < 1 || etapa > 4) return res.status(400).json({ error: 'Etapa inválida (1-4)' });
-
   const comunidad = await prisma.comunidad.findUnique({ where: { id: req.params.id } });
   if (!comunidad) return res.status(404).json({ error: 'Comunidad no encontrada' });
+
+  // Validaciones de progresión:
+  // 1. Debe ser la siguiente etapa correlativa (actual + 1)
+  // 2. No se puede retroceder
+  // 3. No puede exceder la etapa 4
+  if (etapa !== comunidad.etapaActual + 1) {
+    return res.status(400).json({ 
+      error: `Solo se permite avanzar a la siguiente etapa (${comunidad.etapaActual + 1}). No se puede retroceder ni saltar etapas.` 
+    });
+  }
+
+  if (etapa > 4) return res.status(400).json({ error: 'La comunidad ya está en la etapa final.' });
 
   const ahora = new Date();
   await prisma.$transaction([

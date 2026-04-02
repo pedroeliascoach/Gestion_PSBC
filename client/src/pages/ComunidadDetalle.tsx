@@ -48,8 +48,11 @@ export default function ComunidadDetalle() {
           <p className="text-sm text-gray-500">{c.municipio}, {c.estado}</p>
         </div>
         <span className={`text-xs px-3 py-1 rounded-full font-medium ${etapa?.color}`}>{etapa?.label}</span>
-        {isAdmin && (
-          <Button variant="outline" size="sm" onClick={() => setEtapaDialog(true)}>
+        {isAdmin && c.etapaActual < 4 && (
+          <Button variant="outline" size="sm" onClick={() => {
+            setNuevaEtapa((c.etapaActual + 1).toString());
+            setEtapaDialog(true);
+          }}>
             <ArrowRight className="h-3 w-3 mr-1" /> Avanzar Etapa
           </Button>
         )}
@@ -248,13 +251,8 @@ export default function ComunidadDetalle() {
           <DialogHeader><DialogTitle>Cambiar Etapa</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Etapa actual: <strong>{ETAPAS[c.etapaActual]?.label}</strong></p>
-            <Label>Nueva Etapa</Label>
-            <select className="w-full border rounded-md px-3 py-2 text-sm" value={nuevaEtapa} onChange={(e) => setNuevaEtapa(e.target.value)}>
-              <option value="">Seleccionar...</option>
-              {[1, 2, 3, 4].filter((e) => e !== c.etapaActual).map((e) => (
-                <option key={e} value={e}>{ETAPAS[e]?.label}</option>
-              ))}
-            </select>
+            <p className="text-sm text-blue-600">Nueva etapa: <strong>{ETAPAS[c.etapaActual + 1]?.label}</strong></p>
+            <p className="text-xs text-gray-500 italic mt-2">Al confirmar, la comunidad avanzará oficialmente a la siguiente etapa del programa.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEtapaDialog(false)}>Cancelar</Button>

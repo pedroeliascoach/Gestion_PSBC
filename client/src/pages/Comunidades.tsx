@@ -98,7 +98,7 @@ export default function Comunidades() {
             size="sm"
             onClick={() => setEtapaFilter(String(e))}
           >
-            Etapa {e}
+            {ETAPAS[e]?.label}
           </Button>
         ))}
       </div>
