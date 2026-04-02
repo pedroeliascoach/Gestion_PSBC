@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]
 }
 
 enum Rol {
@@ -12,6 +14,7 @@ enum Rol {
   PROMOTOR
   INSTRUCTOR
   PROVEEDOR
+  @@schema("public")
 }
 
 enum ComponentePrograma {
@@ -21,6 +24,7 @@ enum ComponentePrograma {
   ESPACIOS_HABITABLES
   GESTION_RIESGOS
   RECREACION
+  @@schema("public")
 }
 
 enum EstatusCapacitacion {
@@ -28,6 +32,7 @@ enum EstatusCapacitacion {
   EN_PROGRESO
   COMPLETADA
   CANCELADA
+  @@schema("public")
 }
 
 enum EstatusProyecto {
@@ -35,6 +40,7 @@ enum EstatusProyecto {
   EN_EJECUCION
   COMPLETADO
   CANCELADO
+  @@schema("public")
 }
 
 enum TipoReporte {
@@ -42,17 +48,20 @@ enum TipoReporte {
   CAPACITACION
   PROYECTO
   GENERAL
+  @@schema("public")
 }
 
 enum EstatusPago {
   PENDIENTE
   EN_PROCESO
   PAGADO
+  @@schema("public")
 }
 
 enum TipoEntregable {
   REPORTE_FINAL
   FACTURA
+  @@schema("public")
 }
 
 model Usuario {
@@ -68,6 +77,8 @@ model Usuario {
   promotor   Promotor?
   instructor Instructor?
   proveedor  Proveedor?
+
+  @@schema("public")
 }
 
 model Promotor {
@@ -79,6 +90,8 @@ model Promotor {
   comunidades ComunidadPromotor[]
   visitas     Visita[]
   eventos     Evento[]
+
+  @@schema("public")
 }
 
 model Instructor {
@@ -89,6 +102,8 @@ model Instructor {
 
   capacitaciones CapacitacionInstructor[]
   proveedor      Proveedor?
+
+  @@schema("public")
 }
 
 model Comunidad {
@@ -126,6 +141,8 @@ model Comunidad {
   reportes       Reporte[]
   eventos        Evento[]
   historicoEtapas HistoricoEtapa[]
+
+  @@schema("public")
 }
 
 model ComunidadPromotor {
@@ -139,6 +156,7 @@ model ComunidadPromotor {
   promotor  Promotor  @relation(fields: [promotorId], references: [id], onDelete: Cascade)
 
   @@unique([comunidadId, promotorId])
+  @@schema("public")
 }
 
 model HistoricoEtapa {
@@ -149,6 +167,8 @@ model HistoricoEtapa {
   fechaFin    DateTime?
 
   comunidad Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
 
 model IntegranteGrupoDesarrollo {
@@ -160,6 +180,8 @@ model IntegranteGrupoDesarrollo {
   createdAt   DateTime @default(now())
 
   comunidad Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
 
 model Capacitacion {
@@ -180,6 +202,8 @@ model Capacitacion {
   instructores CapacitacionInstructor[]
   reportes     Reporte[]
   fotografias  Fotografia[]
+
+  @@schema("public")
 }
 
 model CapacitacionInstructor {
@@ -191,6 +215,7 @@ model CapacitacionInstructor {
   instructor   Instructor   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
   @@unique([capacitacionId, instructorId])
+  @@schema("public")
 }
 
 model Proyecto {
@@ -211,6 +236,8 @@ model Proyecto {
   proveedor   Proveedor? @relation(fields: [proveedorId], references: [id])
   reportes    Reporte[]
   fotografias Fotografia[]
+
+  @@schema("public")
 }
 
 model Visita {
@@ -226,6 +253,8 @@ model Visita {
   promotor    Promotor   @relation(fields: [promotorId], references: [id], onDelete: Cascade)
   reportes    Reporte[]
   fotografias Fotografia[]
+
+  @@schema("public")
 }
 
 model Evento {
@@ -239,6 +268,8 @@ model Evento {
 
   comunidad Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
   promotor  Promotor  @relation(fields: [promotorId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
 
 model Reporte {
@@ -261,6 +292,8 @@ model Reporte {
   proyecto     Proyecto?     @relation(fields: [proyectoId], references: [id])
   visita       Visita?       @relation(fields: [visitaId], references: [id])
   fotografias  Fotografia[]
+
+  @@schema("public")
 }
 
 model Fotografia {
@@ -278,6 +311,8 @@ model Fotografia {
   capacitacion Capacitacion? @relation(fields: [capacitacionId], references: [id])
   proyecto     Proyecto?     @relation(fields: [proyectoId], references: [id])
   reporte      Reporte?      @relation(fields: [reporteId], references: [id])
+
+  @@schema("public")
 }
 
 model Presupuesto {
@@ -293,6 +328,7 @@ model Presupuesto {
   gastos    Gasto[]
 
   @@unique([comunidadId, anio])
+  @@schema("public")
 }
 
 model Gasto {
@@ -306,6 +342,8 @@ model Gasto {
 
   presupuesto Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
   proveedor   Proveedor?  @relation(fields: [proveedorId], references: [id])
+
+  @@schema("public")
 }
 
 model Proveedor {
@@ -328,6 +366,8 @@ model Proveedor {
   proyectos      Proyecto[]
   gastos         Gasto[]
   entregables    ProveedorEntregable[]
+
+  @@schema("public")
 }
 
 model RequisitoCatalogo {
@@ -340,6 +380,8 @@ model RequisitoCatalogo {
   createdAt   DateTime @default(now())
 
   proveedorRequisitos ProveedorRequisito[]
+
+  @@schema("public")
 }
 
 model ProveedorRequisito {
@@ -357,6 +399,7 @@ model ProveedorRequisito {
   requisito RequisitoCatalogo @relation(fields: [requisitoId], references: [id], onDelete: Cascade)
 
   @@unique([proveedorId, requisitoId])
+  @@schema("public")
 }
 
 model ProveedorEntregable {
@@ -375,4 +418,5 @@ model ProveedorEntregable {
   proveedor Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
 
   @@unique([proveedorId, tipo])
+  @@schema("public")
 }
