@@ -22,9 +22,43 @@ const schema = z.object({
     .transform((val) => (val === '' ? null : val)),
 });
 
+/**
+ * Asegura que un proveedor tenga todos los requisitos activos del catálogo.
+ * Crea las entradas faltantes en ProveedorRequisito.
+ */
+async function syncProveedorRequisitos(proveedorId: string) {
+  const catalogReqs = await prisma.requisitoCatalogo.findMany({ where: { activo: true } });
+  const existingReqs = await prisma.proveedorRequisito.findMany({
+    where: { proveedorId },
+    select: { requisitoId: true }
+  });
+
+  const existingIds = new Set(existingReqs.map(r => r.requisitoId));
+  const missingReqs = catalogReqs.filter(r => !existingIds.has(r.id));
+
+  if (missingReqs.length > 0) {
+    await prisma.proveedorRequisito.createMany({
+      data: missingReqs.map(r => ({
+        proveedorId,
+        requisitoId: r.id,
+        cumplido: false
+      }))
+    });
+  }
+}
+
 router.get('/me', async (req: any, res: Response) => {
   const p = await prisma.proveedor.findFirst({
     where: { usuarioId: req.user.id } as any,
+  });
+  
+  if (!p) return res.status(404).json({ error: 'Perfil de proveedor no encontrado' });
+
+  // Sincronizar requisitos antes de devolver los datos
+  await syncProveedorRequisitos(p.id);
+
+  const updatedP = await prisma.proveedor.findUnique({
+    where: { id: p.id },
     include: {
       requisitos: { include: { requisito: true }, orderBy: { requisito: { orden: 'asc' } } },
       entregables: true,
@@ -32,8 +66,8 @@ router.get('/me', async (req: any, res: Response) => {
       proyectos: { include: { comunidad: { select: { nombre: true } } } },
     },
   });
-  if (!p) return res.status(404).json({ error: 'Perfil de proveedor no encontrado' });
-  res.json(p);
+
+  res.json(updatedP);
 });
 
 router.get('/', async (_req, res: Response) => {
@@ -57,6 +91,9 @@ router.get('/', async (_req, res: Response) => {
 });
 
 router.get('/:id', async (req, res: Response) => {
+  // Sincronizar requisitos antes de devolver los datos
+  await syncProveedorRequisitos(req.params.id);
+
   const p = await prisma.proveedor.findUnique({
     where: { id: req.params.id },
     include: {
