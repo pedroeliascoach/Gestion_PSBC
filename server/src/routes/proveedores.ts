@@ -181,16 +181,41 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { nombre, contacto, telefono, email, activo } = req.body;
-  const data: Record<string, unknown> = {};
-  if (nombre) data.nombre = nombre;
-  if (contacto !== undefined) data.contacto = contacto;
-  if (telefono !== undefined) data.telefono = telefono;
-  if (email !== undefined) data.email = email;
-  if (typeof activo === 'boolean') data.activo = activo;
+  try {
+    const { nombre, contacto, telefono, email, activo, password } = req.body;
+    
+    await prisma.$transaction(async (tx) => {
+      const data: Record<string, unknown> = {};
+      if (nombre) data.nombre = nombre;
+      if (contacto !== undefined) data.contacto = contacto;
+      if (telefono !== undefined) data.telefono = telefono;
+      if (email !== undefined) data.email = email;
+      if (typeof activo === 'boolean') data.activo = activo;
 
-  const proveedor = await prisma.proveedor.update({ where: { id: req.params.id }, data });
-  res.json(proveedor);
+      const updatedProveedor = await tx.proveedor.update({ 
+        where: { id: req.params.id }, 
+        data 
+      });
+
+      if (password && updatedProveedor.usuarioId) {
+        const hash = await bcrypt.hash(password, 10);
+        await tx.usuario.update({
+          where: { id: updatedProveedor.usuarioId },
+          data: { 
+            password: hash,
+            ...(email ? { email } : {}) // Sincronizar email de usuario si cambió
+          }
+        });
+      }
+    });
+
+    const finalProveedor = await prisma.proveedor.findUnique({ where: { id: req.params.id } });
+    res.json(finalProveedor);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Error al actualizar proveedor';
+    console.error(e);
+    res.status(500).json({ error: msg });
+  }
 });
 
 router.patch('/:id/requisitos/:requisitoId', authorize('ADMIN'), upload.single('documento'), async (req, res: Response) => {

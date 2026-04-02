@@ -49,6 +49,7 @@ export default function Proveedores() {
       telefono: p.telefono || '',
       email: p.email || '',
       instructorId: p.instructorId || '',
+      password: '',
     });
     setOpen(true);
   };
@@ -139,12 +140,15 @@ export default function Proveedores() {
               <div><Label>Teléfono</Label><Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></div>
               <div><Label>Email (Acceso)</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             </div>
-            {!editingId && (
-              <div>
-                <Label>Contraseña para Acceso</Label>
-                <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
-              </div>
-            )}
+            <div>
+              <Label>{editingId ? 'Nueva Contraseña (opcional)' : 'Contraseña para Acceso'}</Label>
+              <Input 
+                type="password" 
+                value={form.password} 
+                onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                placeholder={editingId ? 'Dejar en blanco para no cambiar' : 'Mínimo 6 caracteres'} 
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>
