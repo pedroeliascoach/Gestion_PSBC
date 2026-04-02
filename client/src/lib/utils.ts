@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(date: string | Date | null | undefined) {
   if (!date) return '—';
-  return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' }).format(new Date(date));
+  return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(date));
 }
 
 export function formatCurrency(amount: number | null | undefined) {

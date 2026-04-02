@@ -20,7 +20,7 @@ export default function ComunidadDetalle() {
   const isAdmin = user?.rol === 'ADMIN';
   const [etapaDialog, setEtapaDialog] = useState(false);
   const [nuevaEtapa, setNuevaEtapa] = useState('');
-  const [tab, setTab] = useState<'capacitaciones' | 'proyectos' | 'presupuesto' | 'historial' | 'diagnostico' | 'grupo'>('capacitaciones');
+  const [tab, setTab] = useState<'capacitaciones' | 'proyectos' | 'presupuesto' | 'historial' | 'diagnostico' | 'grupo'>('diagnostico');
 
   const { data: c, isLoading } = useQuery({
     queryKey: ['comunidad', id],
@@ -82,10 +82,10 @@ export default function ComunidadDetalle() {
 
       <div className="flex gap-1 border-b overflow-x-auto no-scrollbar">
         {([
-          ['capacitaciones', 'Capacitaciones', BookOpen], 
-          ['proyectos', 'Proyectos', FolderOpen], 
           ['diagnostico', 'Información Gral.', Users],
           ['grupo', 'Grupo Desarrollo', Users],
+          ['capacitaciones', 'Capacitaciones', BookOpen], 
+          ['proyectos', 'Proyectos', FolderOpen], 
           ['presupuesto', 'Presupuesto', DollarSign], 
           ['historial', 'Historial', History]
         ] as const).map(([key, label, Icon]) => (
