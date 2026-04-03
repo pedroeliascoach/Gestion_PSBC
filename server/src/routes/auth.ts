@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
+import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -56,7 +57,57 @@ router.post('/login', async (req, res: Response) => {
 
   return res.json({
     token,
-    usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: roleToUse },
+    usuario: { 
+      id: usuario.id, 
+      nombre: usuario.nombre, 
+      email: usuario.email, 
+      rol: roleToUse,
+      availableRoles: rolesDisponibles 
+    },
+  });
+});
+
+router.post('/switch-role', authenticate, async (req: AuthRequest, res: Response) => {
+  const { role } = req.body;
+  if (!role) return res.status(400).json({ error: 'Rol no especificado' });
+
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: req.user!.id },
+    include: { instructor: true, proveedor: true, promotor: true }
+  }) as any;
+
+  if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  // Verificar si tiene permiso para ese rol
+  let allowed = false;
+  if (usuario.rol === 'ADMIN') allowed = true;
+  if (role === 'INSTRUCTOR' && usuario.instructor) allowed = true;
+  if (role === 'PROVEEDOR' && usuario.proveedor) allowed = true;
+  if (role === 'PROMOTOR' && usuario.promotor) allowed = true;
+
+  if (!allowed) return res.status(403).json({ error: 'No tienes permiso para este perfil' });
+
+  const rolesDisponibles: string[] = [];
+  if (usuario.rol === 'ADMIN') rolesDisponibles.push('ADMIN');
+  if (usuario.promotor) rolesDisponibles.push('PROMOTOR');
+  if (usuario.instructor) rolesDisponibles.push('INSTRUCTOR');
+  if (usuario.proveedor) rolesDisponibles.push('PROVEEDOR');
+
+  const token = jwt.sign(
+    { id: usuario.id, rol: role, email: usuario.email },
+    process.env.JWT_SECRET || 'secret',
+    { expiresIn: '8h' }
+  );
+
+  res.json({
+    token,
+    usuario: { 
+      id: usuario.id, 
+      nombre: usuario.nombre, 
+      email: usuario.email, 
+      rol: role,
+      availableRoles: rolesDisponibles
+    }
   });
 });
 

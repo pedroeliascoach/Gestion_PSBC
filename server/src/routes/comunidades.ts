@@ -13,9 +13,9 @@ const schema = z.object({
   etapaActual: z.number().int().min(1).max(4).optional(),
   fechaIngreso: z.string(),
   fechaEgreso: z.string().optional().nullable(),
-  latitud: z.coerce.number().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
-  longitud: z.coerce.number().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
-  habitantes: z.coerce.number().int().optional().nullable().or(z.literal('')).transform(v => v === '' ? null : v),
+  latitud: z.preprocess((v) => (v === '' ? null : v), z.coerce.number().nullable().optional()),
+  longitud: z.preprocess((v) => (v === '' ? null : v), z.coerce.number().nullable().optional()),
+  habitantes: z.preprocess((v) => (v === '' ? null : v), z.coerce.number().int().nullable().optional()),
   infraestructura: z.string().optional().nullable(),
   recursosNaturales: z.string().optional().nullable(),
   economia: z.string().optional().nullable(),
@@ -108,35 +108,52 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
   }
 });
 
-router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
+router.patch('/:id', authorize('ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
     const { integrantesGrupo, ...rest } = req.body;
+    console.log('PATCH /comunidades/:id - Body:', JSON.stringify(rest, null, 2));
+
     // Usamos el esquema para validar parcialmente los campos enviados
     const parsed = schema.partial().safeParse(rest);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+    if (!parsed.success) {
+      console.error('Zod Validation Error:', JSON.stringify(parsed.error.flatten(), null, 2));
+      return res.status(400).json({ error: parsed.error.flatten() });
+    }
 
     const data: any = { ...parsed.data };
     
-    // Convertmos fechas si existen
-    if (data.fechaEgreso) data.fechaEgreso = new Date(data.fechaEgreso);
-    if (data.fechaConstitucionGrupo) data.fechaConstitucionGrupo = new Date(data.fechaConstitucionGrupo);
+    // Solo convertimos fechas si llegan en el body y son válidas
+    if (typeof rest.fechaIngreso === 'string' && rest.fechaIngreso !== '') {
+      data.fechaIngreso = new Date(rest.fechaIngreso);
+    }
+    if (typeof rest.fechaEgreso === 'string') {
+      data.fechaEgreso = rest.fechaEgreso === '' ? null : new Date(rest.fechaEgreso);
+    }
+    if (typeof rest.fechaConstitucionGrupo === 'string') {
+      data.fechaConstitucionGrupo = rest.fechaConstitucionGrupo === '' ? null : new Date(rest.fechaConstitucionGrupo);
+    }
 
     if (integrantesGrupo && Array.isArray(integrantesGrupo)) {
       data.integrantesGrupo = {
         deleteMany: {},
         create: integrantesGrupo.map((i: any) => ({
           nombre: i.nombre,
-          edad: i.edad ? parseInt(i.edad) : null,
+          edad: i.edad && i.edad !== '' ? parseInt(i.edad) : null,
           rol: i.rol
         }))
       };
     }
 
-    const comunidad = await prisma.comunidad.update({ where: { id: req.params.id }, data });
+    console.log('Final data for update:', JSON.stringify(data, null, 2));
+    const comunidad = await prisma.comunidad.update({ 
+      where: { id: req.params.id }, 
+      data 
+    });
     res.json(comunidad);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error al actualizar comunidad' });
+    console.error('Error in PATCH /comunidades/:id:', e);
+    const msg = e instanceof Error ? e.message : 'Error al actualizar comunidad';
+    res.status(500).json({ error: msg });
   }
 });
 

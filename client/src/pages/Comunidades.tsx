@@ -20,6 +20,7 @@ export default function Comunidades() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [etapaFilter, setEtapaFilter] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ 
     nombre: '', municipio: '', fechaIngreso: '', 
     latitud: '', longitud: '', habitantes: '', 
@@ -41,6 +42,10 @@ export default function Comunidades() {
       qc.invalidateQueries({ queryKey: ['comunidades'] });
       handleClose();
     },
+    onError: (err: any) => {
+      const msg = err.response?.data?.error;
+      setError(typeof msg === 'string' ? msg : 'Error al guardar los datos. Por favor revise los campos.');
+    }
   });
 
   const handleEdit = (c: any) => {
@@ -65,6 +70,7 @@ export default function Comunidades() {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
+    setError(null);
     setForm({ 
       nombre: '', municipio: '', fechaIngreso: '', 
       latitud: '', longitud: '', habitantes: '', 
@@ -153,6 +159,13 @@ export default function Comunidades() {
       <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editingId ? 'Editar Comunidad' : 'Nueva Comunidad'}</DialogTitle></DialogHeader>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>

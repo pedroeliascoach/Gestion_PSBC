@@ -118,8 +118,9 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 
     // Verificar si el usuario ya existe
     const userExists = await prisma.usuario.findUnique({ where: { email } });
-    if (userExists && !instructorId) {
-      return res.status(409).json({ error: 'El email ya está registrado' });
+    if (userExists && !instructorId && userExists.rol === 'ADMIN') {
+        // No permitir usurpar cuenta de admin accidentalmente
+        return res.status(409).json({ error: 'El email ya está registrado como administrador' });
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -197,13 +198,26 @@ router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
         data 
       });
 
-      if (password && updatedProveedor.usuarioId) {
+      let finalUsuarioId = updatedProveedor.usuarioId;
+      if (!finalUsuarioId && email) {
+        // Intentar vincular a un usuario existente por email si era huérfano
+        const userByEmail = await tx.usuario.findUnique({ where: { email } });
+        if (userByEmail) {
+          finalUsuarioId = userByEmail.id;
+          await tx.proveedor.update({ 
+            where: { id: req.params.id }, 
+            data: { usuarioId: finalUsuarioId } 
+          });
+        }
+      }
+
+      if (password && finalUsuarioId) {
         const hash = await bcrypt.hash(password, 10);
         await tx.usuario.update({
-          where: { id: updatedProveedor.usuarioId },
+          where: { id: finalUsuarioId },
           data: { 
             password: hash,
-            ...(email ? { email } : {}) // Sincronizar email de usuario si cambió
+            ...(email ? { email } : {}) 
           }
         });
       }

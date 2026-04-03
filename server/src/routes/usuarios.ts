@@ -56,18 +56,30 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
 });
 
 router.patch('/:id', authorize('ADMIN'), async (req, res: Response) => {
-  const { nombre, activo, password } = req.body;
-  const data: Record<string, unknown> = {};
-  if (nombre) data.nombre = nombre;
-  if (typeof activo === 'boolean') data.activo = activo;
-  if (password) data.password = await bcrypt.hash(password, 10);
+  try {
+    const { nombre, activo, password, email } = req.body;
+    const data: Record<string, unknown> = {};
+    if (nombre) data.nombre = nombre;
+    if (typeof activo === 'boolean') data.activo = activo;
+    if (password) data.password = await bcrypt.hash(password, 10);
+    
+    if (email) {
+      const exists = await prisma.usuario.findFirst({
+        where: { email, NOT: { id: req.params.id } }
+      });
+      if (exists) return res.status(409).json({ error: 'Email ya registrado por otro usuario' });
+      data.email = email;
+    }
 
-  const usuario = await prisma.usuario.update({
-    where: { id: req.params.id },
-    data,
-    select: { id: true, nombre: true, email: true, rol: true, activo: true },
-  });
-  res.json(usuario);
+    const usuario = await prisma.usuario.update({
+      where: { id: req.params.id },
+      data,
+      select: { id: true, nombre: true, email: true, rol: true, activo: true },
+    });
+    res.json(usuario);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.post('/change-password', async (req: AuthRequest, res: Response) => {

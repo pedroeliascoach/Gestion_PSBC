@@ -49,7 +49,7 @@ const navItems: NavItem[] = [
 import logo from '@/assets/logo.png';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, switchRole, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -144,6 +144,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             Cerrar sesión
           </button>
         </div>
+
+        {/* Role Switcher */}
+        {user?.availableRoles && user.availableRoles.length > 1 && (
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="text-[10px] text-[#BC955C] font-bold uppercase tracking-widest mb-3">Cambiar Perfil</p>
+            <div className="space-y-1">
+              {user.availableRoles.filter(r => r !== user.rol).map(role => (
+                <button
+                  key={role}
+                  onClick={async () => {
+                    try {
+                      await switchRole(role);
+                      navigate('/');
+                      setSidebarOpen(false);
+                    } catch (err) {
+                      console.error('Error switching role:', err);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-white/60 hover:bg-white/10 hover:text-[#BC955C] transition-all"
+                >
+                  <Users className="h-3 w-3" />
+                  <span>Entrar como {role.toLowerCase()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

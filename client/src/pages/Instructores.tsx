@@ -24,7 +24,7 @@ export default function Instructores() {
   const upsert = useMutation({
     mutationFn: (data: typeof form) => 
       editingId 
-        ? api.patch(`/usuarios/${editingId}`, { nombre: data.nombre })
+        ? api.patch(`/usuarios/${editingId}`, data)
         : api.post('/usuarios', { ...data, rol: 'INSTRUCTOR' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['instructores'] });
@@ -92,12 +92,16 @@ export default function Instructores() {
           <DialogHeader><DialogTitle>{editingId ? 'Editar Instructor' : 'Nuevo Instructor'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nombre</Label><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></div>
-            {!editingId && (
-              <>
-                <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div><Label>Contraseña inicial</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
-              </>
-            )}
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div>
+              <Label>{editingId ? 'Nueva Contraseña (opcional)' : 'Contraseña inicial'}</Label>
+              <Input 
+                type="password" 
+                value={form.password} 
+                onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                placeholder={editingId ? 'Dejar en blanco para no cambiar' : ''}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>

@@ -6,12 +6,14 @@ interface User {
   nombre: string;
   email: string;
   rol: 'ADMIN' | 'PROMOTOR' | 'INSTRUCTOR' | 'PROVEEDOR';
+  availableRoles?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string, selectedRole?: string) => Promise<any>;
+  switchRole: (role: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -51,6 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   }
 
+  async function switchRole(role: string) {
+    const { data } = await api.post('/auth/switch-role', { role });
+    
+    localStorage.setItem('token', data.token);
+    // Preservar availableRoles del usuario actual si no vienen en la respuesta
+    const newUser = { ...data.usuario, availableRoles: user?.availableRoles };
+    localStorage.setItem('user', JSON.stringify(newUser));
+    
+    setToken(data.token);
+    setUser(newUser);
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+  }
+
   function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -59,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, switchRole, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
