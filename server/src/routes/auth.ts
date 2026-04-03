@@ -24,7 +24,7 @@ router.post('/login', async (req, res: Response) => {
       proveedor: true,
       promotor: true
     }
-  });
+  }) as any;
 
   if (!usuario || !usuario.activo) return res.status(401).json({ error: 'Credenciales inválidas' });
 

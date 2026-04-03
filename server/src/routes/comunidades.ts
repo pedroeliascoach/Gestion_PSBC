@@ -61,7 +61,7 @@ router.get('/:id', async (req, res: Response) => {
       presupuestos: { include: { gastos: true } },
       historicoEtapas: { orderBy: { fechaInicio: 'asc' } },
       integrantesGrupo: true,
-    },
+    } as any,
   });
   if (!c) return res.status(404).json({ error: 'Comunidad no encontrada' });
   res.json(c);
@@ -99,7 +99,7 @@ router.post('/', authorize('ADMIN'), async (req, res: Response) => {
         grupoDesarrolloFormado: grupoDesarrolloFormado ?? false,
         fechaConstitucionGrupo: fechaConstitucionGrupo ? new Date(fechaConstitucionGrupo) : null,
         historicoEtapas: { create: { etapa, fechaInicio: fechaIngresoDate } },
-      },
+      } as any,
     });
     res.status(201).json(comunidad);
   } catch (e) {
@@ -145,7 +145,7 @@ router.patch('/:id', authorize('ADMIN'), async (req: AuthRequest, res: Response)
     }
 
     console.log('Final data for update:', JSON.stringify(data, null, 2));
-    const comunidad = await prisma.comunidad.update({ 
+    const comunidad = await (prisma.comunidad.update as any)({ 
       where: { id: req.params.id }, 
       data 
     });
